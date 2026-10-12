@@ -1,56 +1,30 @@
-# Welcome to your Expo app 👋
+# GigGuru Merchant
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An Expo Router mobile workspace for independent merchants and service professionals. The mobile-first interface follows the supplied navy-and-pastel design reference and uses the GigGuru logo assets throughout.
 
-## Get started
+## Run locally
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```sh
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Use the Expo Go app for the current UI preview, or open an iOS, Android, or web target from the Expo CLI.
 
-### Other setup steps
+## Current scope
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- The Home screen is an account-free dashboard preview. It does not display invented appointments, orders, balances, or payment activity.
+- The Business screen distinguishes API-supported merchant areas from future integrations.
+- The app uses the supplied GigGuru marks for in-app branding, app icons, the web favicon, and the splash screen.
+- Sign-in, secure session storage, and authenticated API access are not implemented yet. No credentials or tokens are stored by this preview.
+- The existing API supports read-only payment records, not payment collection or confirmation. Stripe checkout, live map tracking, and socket-based updates need backend support before they can be represented as working features.
 
-## Learn more
+Read [AI_MOBILE_API_CONTEXT.md](./AI_MOBILE_API_CONTEXT.md) before implementing API calls. It documents endpoint contracts, authentication token handling, and missing backend capabilities.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Security requirements for integration
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Keep Stripe secret keys and privileged credentials on the backend.
+- Store authentication tokens in platform secure storage; never put them in ordinary app storage or source control.
+- Use the ID token for merchant API calls and the access token only for sign-out and password changes, as specified by the API context.
+- Treat the server as the source of truth and update the UI only after a successful response.
+- Implement bounded error handling and respect API rate limits; do not retry authentication failures in a tight loop.
