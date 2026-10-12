@@ -7,13 +7,13 @@
     "orientation": "portrait",
     "icon": "./assets/images/gigguru-app-icon.png",
     "scheme": "thegiggurumerchantapp",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/images/gigguru-app-icon.png"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#202C47",
+        "backgroundColor": "#013000",
         "foregroundImage": "./assets/images/lime-green-logo.png",
         "monochromeImage": "./assets/images/lime-green-logo.png"
       },
@@ -28,11 +28,12 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#202C47",
+          "backgroundColor": "#013000",
           "image": "./assets/images/white-logo.png",
           "imageWidth": 68
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

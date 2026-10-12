@@ -9,32 +9,34 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#FFFFFF',
-    background: '#202C47',
-    backgroundElement: '#283652',
-    backgroundSelected: '#394967',
-    textSecondary: '#B8C5DC',
+    text: '#001900',
+    background: '#F6FAF5',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#EAF4E9',
+    textSecondary: '#587058',
   },
   dark: {
     text: '#FFFFFF',
-    background: '#202C47',
-    backgroundElement: '#283652',
-    backgroundSelected: '#394967',
-    textSecondary: '#B8C5DC',
+    background: '#001900',
+    backgroundElement: '#013000',
+    backgroundSelected: '#164813',
+    textSecondary: '#B6C9B4',
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Brand = {
-  deep: '#1B2742',
-  green: '#02C800',
-  dark: '#151F36',
+  deep: '#013000',
+  green: '#257F24',
+  dark: '#001900',
   bright: '#02C800',
   white: '#FFFFFF',
-  canvas: '#202C47',
-  border: '#3A4965',
-  muted: '#B8C5DC',
+  canvas: '#F6FAF5',
+  border: '#DDE8DC',
+  muted: '#587058',
+  softGreen: '#EAF4E9',
+  danger: '#B42318',
 } as const;
 
 export const Fonts = Platform.select({
