@@ -84,20 +84,17 @@ export default function SignInScreen() {
                 style={styles.logo}
               />
             </View>
-            <Text style={styles.brandName}>GigGuru</Text>
+            <Text style={styles.brandName}>The GigGuru</Text>
             <Text style={styles.brandTag}>MERCHANT</Text>
           </View>
 
           <View style={styles.welcome}>
             <Text style={styles.welcomeEyebrow}>WELCOME TO YOUR BUSINESS HUB</Text>
-            <Text style={styles.welcomeTitle}>
-              Your business,{'\n'}in your pocket.
-            </Text>
           </View>
 
           <View style={styles.form}>
             <Text style={styles.formTitle}>
-              {challenge ? 'Create a new password' : 'Sign in to GigGuru'}
+              {challenge ? 'Create a new password' : 'Sign in to The GigGuru'}
             </Text>
             {challenge ? (
               <InlineNotice
@@ -181,7 +178,6 @@ const styles = StyleSheet.create({
   brandTag: { color: Brand.green, fontSize: 10, fontWeight: '900', letterSpacing: 2, marginTop: 2 },
   welcome: { width: '100%', maxWidth: 420, marginBottom: 25 },
   welcomeEyebrow: { color: Brand.green, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
-  welcomeTitle: { color: Brand.deep, fontSize: 35, lineHeight: 40, fontWeight: '900', marginTop: 9 },
   welcomeCopy: { color: Brand.muted, fontSize: 15, lineHeight: 22, marginTop: 9 },
   form: {
     width: '100%',
