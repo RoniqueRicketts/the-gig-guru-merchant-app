@@ -1,6 +1,26 @@
-import { readSession, writeSession, type AuthSession } from '@/lib/session';
+import { readSession, writeSession, type AuthSession } from "@/lib/session";
 
-const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/+$/, '');
+const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, "");
+
+function isJsonPlaceholder(): boolean {
+  if (!baseUrl) return false;
+  try {
+    const url = new URL(baseUrl);
+    return (
+      url.protocol === "https:" &&
+      url.hostname === "jsonplaceholder.typicode.com"
+    );
+  } catch {
+    return false;
+  }
+}
+
+const apiPathPrefix = (
+  process.env.EXPO_PUBLIC_API_PATH_PREFIX ??
+  (isJsonPlaceholder() ? "" : "/api/v1")
+)
+  .trim()
+  .replace(/^\/+|\/+$/g, "");
 let refreshInFlight: Promise<AuthSession | null> | null = null;
 
 export class ApiError extends Error {
@@ -8,16 +28,18 @@ export class ApiError extends Error {
 
   constructor(message: string, status: number) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
   }
 }
 
 function apiUrl(path: string): string {
   if (!baseUrl) {
-    throw new Error('Set EXPO_PUBLIC_API_BASE_URL to connect to the GigGuru API.');
+    throw new Error(
+      "Set EXPO_PUBLIC_API_BASE_URL to connect to the GigGuru API.",
+    );
   }
-  return `${baseUrl}/api/v1${path.startsWith('/') ? path : `/${path}`}`;
+  return `${baseUrl}${apiPathPrefix ? `/${apiPathPrefix}` : ""}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 async function refreshSession(): Promise<AuthSession | null> {
@@ -30,8 +52,8 @@ async function refreshSession(): Promise<AuthSession | null> {
         idToken: string;
         access: string;
         refresh: string;
-      }>('/auth/refresh', {
-        method: 'POST',
+      }>("/auth/refresh", {
+        method: "POST",
         body: { userID: current.userId, refreshToken: current.refreshToken },
         authenticated: false,
         retryAuth: false,
@@ -53,34 +75,60 @@ async function refreshSession(): Promise<AuthSession | null> {
 }
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+  method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   body?: unknown;
   authenticated?: boolean;
   retryAuth?: boolean;
   bearerToken?: string;
 };
 
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const {
-    method = 'GET',
+    method = "GET",
     body,
     authenticated = true,
     retryAuth = true,
     bearerToken,
   } = options;
-  const headers: Record<string, string> = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (
+    isJsonPlaceholder() &&
+    (method !== "GET" || authenticated || bearerToken || body !== undefined)
+  ) {
+    throw new Error(
+      "JSONPlaceholder is restricted to unauthenticated GET checks. Use your GigGuru API for sign-in and merchant data.",
+    );
+  }
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
 
   const session = authenticated ? await readSession() : null;
-  if (authenticated && !session) throw new Error('Your session has expired. Please sign in again.');
+  if (authenticated && !session)
+    throw new Error("Your session has expired. Please sign in again.");
   if (session) headers.Authorization = `Bearer ${session.idToken}`;
   if (bearerToken) headers.Authorization = `Bearer ${bearerToken}`;
 
-  const response = await fetch(apiUrl(path), {
-    method,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  const url = apiUrl(path);
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    let host = "the configured API";
+    try {
+      host = new URL(url).host;
+    } catch {
+      // apiUrl validates that a base URL is configured before this point.
+    }
+    throw new Error(
+      `Unable to connect to ${host}. Check the API URL and your network connection.`,
+    );
+  }
   const responseText = await response.text();
   let payload: unknown = null;
   if (responseText) {
@@ -96,16 +144,19 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       const refreshed = await refreshSession();
       if (refreshed) return request<T>(path, { ...options, retryAuth: false });
     } catch {
-      throw new Error('Your session expired. Please sign in again.');
+      throw new Error("Your session expired. Please sign in again.");
     }
   }
 
   if (!response.ok) {
-    const record = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null;
+    const record =
+      payload && typeof payload === "object"
+        ? (payload as Record<string, unknown>)
+        : null;
     const message =
-      (typeof record?.message === 'string' && record.message) ||
-      (typeof record?.error === 'string' && record.error) ||
-      (typeof payload === 'string' && payload) ||
+      (typeof record?.message === "string" && record.message) ||
+      (typeof record?.error === "string" && record.error) ||
+      (typeof payload === "string" && payload) ||
       `Request failed (${response.status}).`;
     throw new ApiError(message, response.status);
   }
@@ -113,7 +164,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 }
 
 export function unwrapData<T>(response: unknown): T {
-  if (response && typeof response === 'object' && 'data' in response) {
+  if (response && typeof response === "object" && "data" in response) {
     return (response as { data: T }).data;
   }
   return response as T;

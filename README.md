@@ -9,13 +9,27 @@ npm install
 npx expo start
 ```
 
-Set the API origin before signing in:
+Set the API origin before signing in. GigGuru's API prefix defaults to
+`/api/v1`; it is automatically omitted for JSONPlaceholder. Set
+`EXPO_PUBLIC_API_PATH_PREFIX` to an empty value when another server serves
+routes from its root:
 
 ```sh
 EXPO_PUBLIC_API_BASE_URL=https://your-api-host
 ```
 
-The value is the API host only; the app adds `/api/v1`. Keep credentials and tokens out of source control. Native sign-in tokens use iOS Keychain / Android Keystore-backed SecureStore; web sessions stay in memory only.
+For a safe connectivity check during development, you can use JSONPlaceholder:
+
+```sh
+EXPO_PUBLIC_API_BASE_URL=https://jsonplaceholder.typicode.com
+```
+
+The development sign-in screen's **Test API connection** action performs only
+an unauthenticated `GET /posts/1`. The client blocks other methods, request
+bodies, and authentication headers for JSONPlaceholder. This sample API does
+not implement GigGuru sign-in or merchant routes. Keep credentials and tokens
+out of source control. Native sign-in tokens use iOS Keychain / Android
+Keystore-backed SecureStore; web sessions stay in memory only.
 
 ## Current scope
 
