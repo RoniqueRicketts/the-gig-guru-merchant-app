@@ -14,14 +14,33 @@ import { Brand } from '@/constants/theme';
 
 type AppSymbolName = React.ComponentProps<typeof SymbolView>['name'];
 
-const symbols: Record<string, AppSymbolName> = {
+const symbols = {
   plus: { ios: 'plus', android: 'add', web: 'add' },
+  'house.fill': { ios: 'house.fill', android: 'home', web: 'home' },
+  'chevron.left': { ios: 'chevron.left', android: 'chevron_left', web: 'chevron_left' },
   'chevron.right': { ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' },
+  calendar: { ios: 'calendar', android: 'calendar_today', web: 'calendar_today' },
   sparkles: { ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' },
   'shippingbox.fill': { ios: 'shippingbox.fill', android: 'inventory_2', web: 'inventory_2' },
   'clock.fill': { ios: 'clock.fill', android: 'schedule', web: 'schedule' },
   'mappin.and.ellipse': { ios: 'mappin.and.ellipse', android: 'location_on', web: 'location_on' },
-};
+  mappin: { ios: 'mappin', android: 'location_on', web: 'location_on' },
+  'building.2.fill': { ios: 'building.2.fill', android: 'business', web: 'business' },
+  'lock.fill': { ios: 'lock.fill', android: 'lock', web: 'lock' },
+  'hand.raised.fill': { ios: 'hand.raised.fill', android: 'shield', web: 'shield' },
+  'bag.fill': { ios: 'bag.fill', android: 'shopping_bag', web: 'shopping_bag' },
+  'person.crop.circle.fill': { ios: 'person.crop.circle.fill', android: 'account_circle', web: 'account_circle' },
+  'person.crop.circle': { ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' },
+  'info.circle': { ios: 'info.circle', android: 'info', web: 'info' },
+  'arrow.up.right': { ios: 'arrow.up.right', android: 'north_east', web: 'north_east' },
+  'doc.text.fill': { ios: 'doc.text.fill', android: 'receipt_long', web: 'receipt_long' },
+} satisfies Record<string, AppSymbolName>;
+
+export type AppIconName = keyof typeof symbols;
+
+export function AppIcon({ name, color, size = 20 }: { name: AppIconName; color: string; size?: number }) {
+  return <SymbolView name={symbols[name]} tintColor={color} size={size} />;
+}
 
 export function PageHeader({
   eyebrow,
@@ -60,7 +79,7 @@ export function AppButton({
   variant?: 'primary' | 'secondary' | 'danger' | 'quiet';
   disabled?: boolean;
   loading?: boolean;
-  icon?: string;
+  icon?: AppIconName;
   style?: ViewStyle;
 }) {
   return (
@@ -80,11 +99,7 @@ export function AppButton({
       ) : (
         <>
           {icon ? (
-            <SymbolView
-              name={symbols[icon] || symbols.plus}
-              tintColor={variant === 'primary' ? Brand.white : Brand.deep}
-              size={17}
-            />
+            <AppIcon name={icon} color={variant === 'primary' ? Brand.white : Brand.deep} size={17} />
           ) : null}
           <Text
             style={[

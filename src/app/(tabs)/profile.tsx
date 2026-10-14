@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton, FormField, InlineNotice, PageHeader, Surface } from '@/components/ui';
+import { AppButton, AppIcon, FormField, InlineNotice, PageHeader, Surface, type AppIconName } from '@/components/ui';
 import { Brand, MaxContentWidth } from '@/constants/theme';
 import { useAuth } from '@/lib/auth';
 
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <PageHeader eyebrow="YOUR ACCOUNT" title="Profile" subtitle="Your merchant account and app settings." />
+        <PageHeader eyebrow="GIGGURU MERCHANT" title="More" subtitle="Business tools, your account and settings." />
         {error ? <InlineNotice message={error} /> : null}
         {message ? <InlineNotice message={message} tone="info" /> : null}
         <Surface style={styles.identity}>
@@ -64,21 +64,31 @@ export default function ProfileScreen() {
             <Text style={styles.identitySub}>Signed in to GigGuru Merchant</Text>
           </View>
         </Surface>
-        <Text style={styles.groupTitle}>BUSINESS</Text>
+        <Text style={styles.groupTitle}>BUSINESS TOOLS</Text>
         <Surface style={styles.actionCard}>
-          <SettingRow title="Company profile" detail="Business name, contact and appearance" icon="▦" onPress={() => router.navigate('/company')} />
+          <SettingRow title="Appointments" detail="Open your calendar and manage bookings" icon="calendar" onPress={() => router.navigate('/(tabs)/manage')} />
           <View style={styles.divider} />
-          <SettingRow title="Addresses" detail="Saved and default business addresses" icon="⌖" onPress={() => router.navigate('/addresses')} />
+          <SettingRow title="Services" detail="Edit your service menu and pricing" icon="sparkles" onPress={() => router.navigate('/services')} />
+          <View style={styles.divider} />
+          <SettingRow title="Products" detail="Browse and update your product catalog" icon="shippingbox.fill" onPress={() => router.navigate('/products')} />
+          <View style={styles.divider} />
+          <SettingRow title="Orders" detail="Review orders and fulfillment status" icon="bag.fill" onPress={() => router.navigate('/orders')} />
+          <View style={styles.divider} />
+          <SettingRow title="Invoices" detail="Check amounts, due dates and payment status" icon="doc.text.fill" onPress={() => router.navigate('/(tabs)/invoices')} />
+          <View style={styles.divider} />
+          <SettingRow title="Schedule" detail="Set your business hours and availability" icon="clock.fill" onPress={() => router.navigate('/schedules')} />
+          <View style={styles.divider} />
+          <SettingRow title="Branches" detail="Manage your business locations" icon="mappin.and.ellipse" onPress={() => router.navigate('/branches')} />
+          <View style={styles.divider} />
+          <SettingRow title="Company profile" detail="Business name, contact and appearance" icon="building.2.fill" onPress={() => router.navigate('/company')} />
+          <View style={styles.divider} />
+          <SettingRow title="Addresses" detail="Saved and default business addresses" icon="mappin.and.ellipse" onPress={() => router.navigate('/addresses')} />
         </Surface>
         <Text style={styles.groupTitle}>SECURITY</Text>
         <Surface style={styles.actionCard}>
-          <SettingRow title="Change password" detail="Update your sign-in credentials" icon="⌑" onPress={() => setPasswordModal(true)} />
+          <SettingRow title="Change password" detail="Update your sign-in credentials" icon="lock.fill" onPress={() => setPasswordModal(true)} />
           <View style={styles.divider} />
-          <SettingRow title="Privacy & data" detail="Your session tokens are stored securely on this device." icon="◇" />
-        </Surface>
-        <Text style={styles.groupTitle}>APP</Text>
-        <Surface style={styles.actionCard}>
-          <SettingRow title="GigGuru Merchant" detail="A simpler workspace for your business" icon="✳" />
+          <SettingRow title="Privacy & data" detail="Your session tokens are stored securely on this device." icon="hand.raised.fill" />
         </Surface>
         <AppButton label="Sign out" loading={working} onPress={() => void logOut()} variant="danger" style={styles.signOut} />
         <Text style={styles.footer}>YOUR BUSINESS. YOUR WAY.</Text>
@@ -102,10 +112,10 @@ export default function ProfileScreen() {
   );
 }
 
-function SettingRow({ title, detail, icon, onPress }: { title: string; detail: string; icon: string; onPress?: () => void }) {
+function SettingRow({ title, detail, icon, onPress }: { title: string; detail: string; icon: AppIconName; onPress?: () => void }) {
   return (
     <View style={styles.settingRow}>
-      <View style={styles.settingIcon}><Text style={styles.settingIconText}>{icon}</Text></View>
+      <View style={styles.settingIcon}><AppIcon name={icon} color={Brand.green} size={18} /></View>
       <View style={styles.settingCopy}>
         <Text style={styles.settingTitle}>{title}</Text>
         <Text style={styles.settingDetail}>{detail}</Text>
@@ -128,7 +138,6 @@ const styles = StyleSheet.create({
   actionCard: { paddingHorizontal: 14, paddingVertical: 2 },
   settingRow: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 10 },
   settingIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: Brand.softGreen, alignItems: 'center', justifyContent: 'center' },
-  settingIconText: { color: Brand.green, fontSize: 17, fontWeight: '800' },
   settingCopy: { flex: 1 },
   settingTitle: { color: Brand.deep, fontSize: 13, fontWeight: '800' },
   settingDetail: { color: Brand.muted, fontSize: 10, lineHeight: 15, marginTop: 3 },

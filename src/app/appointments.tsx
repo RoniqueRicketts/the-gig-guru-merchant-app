@@ -1,5 +1,8 @@
+import { useLocalSearchParams } from 'expo-router';
+
 import ResourceScreen from '@/components/resource-screen';
 
 export default function AppointmentsScreen() {
-  return <ResourceScreen resource="appointments" />;
+  const { create } = useLocalSearchParams<{ create?: string }>();
+  return <ResourceScreen initialCreate={create === 'true'} resource="appointments" />;
 }

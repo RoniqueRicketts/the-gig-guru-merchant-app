@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton, FormField, InlineNotice, PageHeader, Surface } from '@/components/ui';
+import { AppButton, AppIcon, FormField, InlineNotice, PageHeader, Surface } from '@/components/ui';
 import { Brand, MaxContentWidth } from '@/constants/theme';
 import { request, unwrapData } from '@/lib/api';
 
@@ -35,6 +35,7 @@ type ResourceConfig = {
   fields: FieldSpec[];
   editFields?: FieldSpec[];
   query?: (search: string, offset: number) => string;
+  localSearch?: boolean;
   canCreate?: boolean;
   canUpdate?: boolean;
   canDelete?: boolean;
@@ -65,6 +66,35 @@ function recordName(record: RecordValue, config: ResourceConfig): string {
 function recordId(record: RecordValue, config: ResourceConfig): string | null {
   const id = record[config.primaryKey || 'id'];
   return typeof id === 'string' || typeof id === 'number' ? String(id) : null;
+}
+
+function formatMoney(value: unknown, currency: unknown): string {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return 'Amount unavailable';
+  const code = typeof currency === 'string' && currency ? currency.toUpperCase() : 'USD';
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: code }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${code}`;
+  }
+}
+
+function InvoiceStatus({ status }: { status: string }) {
+  const normalized = status.toLowerCase();
+  const tone = normalized.includes('paid')
+    ? 'green'
+    : normalized.includes('overdue') || normalized.includes('cancel')
+      ? 'red'
+      : normalized.includes('sent')
+        ? 'blue'
+        : 'gray';
+  return (
+    <View style={[styles.invoiceStatus, tone === 'green' ? styles.invoicePaid : tone === 'red' ? styles.invoiceOverdue : tone === 'blue' ? styles.invoiceSent : styles.invoiceDraft]}>
+      <Text style={[styles.invoiceStatusText, tone === 'green' ? styles.invoicePaidText : tone === 'red' ? styles.invoiceOverdueText : tone === 'blue' ? styles.invoiceSentText : styles.invoiceDraftText]}>
+        {status.replace(/_/g, ' ')}
+      </Text>
+    </View>
+  );
 }
 
 function createBody(resource: string, values: Record<string, string>): RecordValue {
@@ -317,6 +347,21 @@ const resources: Record<string, ResourceConfig> = {
     makeCreateBody: () => ({}),
     makeUpdateBody: () => ({}),
   },
+  invoices: {
+    title: 'Invoices',
+    endpoint: '/invoices',
+    description: 'Track invoice totals, due dates and payment status.',
+    query: (_search, offset) => `?skip=${offset}`,
+    localSearch: true,
+    fields: [],
+    canCreate: false,
+    canUpdate: false,
+    canDelete: false,
+    titleKey: 'invoiceId',
+    subtitleKeys: ['customerName', 'dueDate'],
+    makeCreateBody: () => ({}),
+    makeUpdateBody: () => ({}),
+  },
 };
 
 function parseList(response: unknown, supportsPagination: boolean): { rows: RecordValue[]; hasMore: boolean } {
@@ -331,14 +376,19 @@ function parseList(response: unknown, supportsPagination: boolean): { rows: Reco
   return { rows, hasMore };
 }
 
-export default function ResourceScreen({ resource }: { resource: string }) {
+export default function ResourceScreen({ resource, initialCreate = false }: { resource: string; initialCreate?: boolean }) {
   const config = resources[resource] || resources.products;
   const [records, setRecords] = useState<RecordValue[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [editor, setEditor] = useState<{ id: string | null; values: Record<string, string> } | null>(null);
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [editor, setEditor] = useState<{ id: string | null; values: Record<string, string> } | null>(() =>
+    initialCreate
+      ? { id: null, values: Object.fromEntries(config.fields.map((field) => [field.key, ''])) }
+      : null
+  );
   const [working, setWorking] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -370,8 +420,25 @@ export default function ResourceScreen({ resource }: { resource: string }) {
   );
 
   useEffect(() => {
-    void load(0, false, '');
-  }, [load]);
+    let active = true;
+    request<unknown>(`${config.endpoint}${config.query ? config.query('', 0) : ''}`)
+      .then((response) => {
+        if (!active) return;
+        const result = parseList(response, config.query !== undefined);
+        setRecords(result.rows);
+        setOffset(result.rows.length);
+        setHasMore(result.hasMore);
+      })
+      .catch((cause: unknown) => {
+        if (active) setError(cause instanceof Error ? cause.message : `Unable to load ${config.title.toLowerCase()}.`);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [config]);
 
   const editorFields = useMemo(
     () => (editor?.id && config.editFields ? config.editFields : config.fields),
@@ -540,14 +607,35 @@ export default function ResourceScreen({ resource }: { resource: string }) {
 
   const searchNow = () => {
     setOffset(0);
+    if (config.localSearch) {
+      setAppliedSearch(search.trim().toLowerCase());
+      return;
+    }
     void load(0, false, search);
   };
 
+  const visibleRecords = config.localSearch && appliedSearch
+    ? records.filter((record) =>
+        `${recordName(record, config)} ${stringValue(record.status)} ${stringValue(record.customerName)}`
+          .toLowerCase()
+          .includes(appliedSearch)
+      )
+    : records;
+
   const renderRecord = ({ item }: { item: RecordValue }) => {
     const subtitle = (config.subtitleKeys || [])
-      .map((key) => item[key])
-      .filter((value) => value !== null && value !== undefined && String(value).trim())
-      .map((value) => String(value))
+      .map((key) => {
+        const value = item[key];
+        if (value === null || value === undefined || !String(value).trim()) return '';
+        if (resource === 'invoices' && key === 'dueDate') {
+          const dueDate = new Date(String(value));
+          return Number.isNaN(dueDate.getTime())
+            ? `Due ${String(value)}`
+            : `Due ${dueDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+        }
+        return String(value);
+      })
+      .filter(Boolean)
       .slice(0, 3)
       .join('  ·  ');
     const id = recordId(item, config);
@@ -555,14 +643,22 @@ export default function ResourceScreen({ resource }: { resource: string }) {
       <Surface style={styles.recordCard}>
         <View style={styles.recordTop}>
           <View style={styles.recordMark}>
-            <Text style={styles.recordInitial}>{recordName(item, config).slice(0, 1).toUpperCase()}</Text>
+            {resource === 'invoices'
+              ? <AppIcon name="doc.text.fill" color={Brand.green} size={19} />
+              : <Text style={styles.recordInitial}>{recordName(item, config).slice(0, 1).toUpperCase()}</Text>}
           </View>
           <View style={styles.recordCopy}>
             <Text numberOfLines={1} style={styles.recordTitle}>{recordName(item, config)}</Text>
             {subtitle ? <Text numberOfLines={2} style={styles.recordSubtitle}>{subtitle}</Text> : null}
           </View>
-          {item.isDefault === true ? <Text style={styles.defaultPill}>DEFAULT</Text> : null}
+          {resource === 'invoices' ? (
+            <View style={styles.invoiceAmount}>
+              <Text style={styles.invoiceTotal}>{formatMoney(item.total, item.currency)}</Text>
+              <InvoiceStatus status={stringValue(item.status) || 'Unknown'} />
+            </View>
+          ) : item.isDefault === true ? <Text style={styles.defaultPill}>DEFAULT</Text> : null}
         </View>
+        {config.canUpdate !== false || resource === 'appointments' || resource === 'orders' || config.canDelete !== false ? (
         <View style={styles.recordActions}>
           {config.canUpdate !== false ? (
             <AppButton label="Edit" onPress={() => startEditor(item)} variant="secondary" style={styles.smallButton} />
@@ -580,6 +676,7 @@ export default function ResourceScreen({ resource }: { resource: string }) {
             <AppButton label="Delete" onPress={() => setConfirmDelete(item)} variant="danger" style={styles.smallButton} />
           ) : null}
         </View>
+        ) : null}
         {resource === 'addresses' && id ? (
           <Pressable
             accessibilityRole="button"
@@ -641,14 +738,14 @@ export default function ResourceScreen({ resource }: { resource: string }) {
           </View>
         ) : (
           <FlatList
-            contentContainerStyle={records.length ? styles.list : styles.emptyList}
-            data={records}
+            contentContainerStyle={visibleRecords.length ? styles.list : styles.emptyList}
+            data={visibleRecords}
             keyExtractor={(item, index) => recordId(item, config) || `${resource}-${index}`}
             ListEmptyComponent={
               <View style={styles.empty}>
                 <View style={styles.emptyIcon}><Text style={styles.emptyIconText}>+</Text></View>
-                <Text style={styles.emptyTitle}>A fresh start</Text>
-                <Text style={styles.emptyText}>Nothing here yet. Add your first {config.title.toLowerCase().replace(/s$/, '')} to get organized.</Text>
+                <Text style={styles.emptyTitle}>{appliedSearch ? 'No matches found' : 'A fresh start'}</Text>
+                <Text style={styles.emptyText}>{appliedSearch ? 'Try another search term.' : `Nothing here yet. Add your first ${config.title.toLowerCase().replace(/s$/, '')} to get organized.`}</Text>
                 {config.canCreate !== false ? <AppButton label={`Add ${config.title.slice(0, -1)}`} onPress={() => startEditor()} /> : null}
               </View>
             }
@@ -750,6 +847,7 @@ export default function ResourceScreen({ resource }: { resource: string }) {
       </Modal>
 
       <RescheduleModal
+        key={rescheduleRecord ? recordId(rescheduleRecord, config) ?? 'reschedule' : 'closed'}
         record={rescheduleRecord}
         working={working}
         onClose={() => setRescheduleRecord(null)}
@@ -770,15 +868,8 @@ function RescheduleModal({
   onClose: () => void;
   onSave: (values: Record<string, string>) => void;
 }) {
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
-
-  useEffect(() => {
-    if (record) {
-      setStart(stringValue(record.start));
-      setEnd(stringValue(record.end));
-    }
-  }, [record]);
+  const [start, setStart] = useState(() => stringValue(record?.start));
+  const [end, setEnd] = useState(() => stringValue(record?.end));
 
   return (
     <Modal animationType="slide" onRequestClose={onClose} transparent visible={!!record}>
@@ -820,6 +911,18 @@ const styles = StyleSheet.create({
   recordCopy: { flex: 1 },
   recordTitle: { color: Brand.deep, fontSize: 15, fontWeight: '800' },
   recordSubtitle: { color: Brand.muted, fontSize: 12, marginTop: 4, lineHeight: 17 },
+  invoiceAmount: { maxWidth: '42%', alignItems: 'flex-end', gap: 6 },
+  invoiceTotal: { color: Brand.deep, fontSize: 12, fontWeight: '800', textAlign: 'right' },
+  invoiceStatus: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
+  invoiceStatusText: { fontSize: 9, fontWeight: '700', textTransform: 'capitalize' },
+  invoicePaid: { backgroundColor: '#EAF6E8' },
+  invoicePaidText: { color: '#347A2B' },
+  invoiceOverdue: { backgroundColor: '#FDEDEC' },
+  invoiceOverdueText: { color: '#B42318' },
+  invoiceSent: { backgroundColor: '#EAF3FE' },
+  invoiceSentText: { color: '#2366A8' },
+  invoiceDraft: { backgroundColor: '#F0F2EF' },
+  invoiceDraftText: { color: Brand.muted },
   defaultPill: { color: Brand.green, fontSize: 9, fontWeight: '800', letterSpacing: 0.6, backgroundColor: Brand.softGreen, padding: 7, borderRadius: 9 },
   recordActions: { borderTopColor: '#EEF3ED', borderTopWidth: 1, marginTop: 13, paddingTop: 11, flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   smallButton: { minHeight: 38, paddingHorizontal: 12 },
