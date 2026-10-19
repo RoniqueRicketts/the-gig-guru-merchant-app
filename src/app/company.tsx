@@ -1,104 +1,88 @@
-import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
-import { AppButton, FormField, InlineNotice, PageHeader } from '@/components/ui';
-import { Brand, MaxContentWidth } from '@/constants/theme';
-import { request, unwrapData } from '@/lib/api';
-
-type Company = Record<string, unknown>;
-const fields = [
-  { key: 'name', label: 'Business name' },
-  { key: 'email', label: 'Business email', keyboardType: 'email-address' as const },
-  { key: 'telephone', label: 'Telephone' },
-  { key: 'avatar', label: 'Logo image URL' },
-  { key: 'theme', label: 'Theme color' },
-];
+import { FormScreen } from '@/components/form-screen';
+import { Avatar, Banner, Field, useToast } from '@/components/ui';
+import { Colors, Spacing } from '@/constants/theme';
+import { useQuery } from '@/hooks/use-api';
+import { request } from '@/lib/api';
+import { str, type Row } from '@/lib/format';
+import { isE164, isEmail, isHttpsUrl, normalizePhone, safeMessage } from '@/lib/security';
 
 export default function CompanyScreen() {
-  const [company, setCompany] = useState<Company | null>(null);
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [working, setWorking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const query = useQuery<Row | null>('/companies');
+  if (query.loading) return <FormScreen loading onSave={() => {}} saveLabel="" saving={false} title="Business profile">{null}</FormScreen>;
+  if (query.error && !query.data) {
+    return (
+      <FormScreen loadError={query.error} onRetry={() => void query.refresh()} onSave={() => {}} saveLabel="" saving={false} title="Business profile">
+        {null}
+      </FormScreen>
+    );
+  }
+  return <CompanyForm initial={query.data} />;
+}
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = unwrapData<Company | null>(await request('/companies'));
-      setCompany(result);
-      setValues(Object.fromEntries(fields.map((field) => [field.key, result?.[field.key] == null ? '' : String(result[field.key])])));
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load company profile.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { void load(); }, []);
+function CompanyForm({ initial }: { initial: Row | null }) {
+  const toast = useToast();
+  const [name, setName] = useState(str(initial?.name));
+  const [email, setEmail] = useState(str(initial?.email));
+  const [phone, setPhone] = useState(str(initial?.telephone));
+  const [avatar, setAvatar] = useState(str(initial?.avatar));
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const save = async () => {
-    const body = Object.fromEntries(
-      Object.entries(values)
-        .filter(([key, value]) => value.trim() && value.trim() !== String(company?.[key] ?? ''))
-        .map(([key, value]) => [key, value.trim()])
-    );
-    if (Object.keys(body).length === 0) {
-      setError('There are no profile changes to save.');
+    const cleanPhone = normalizePhone(phone);
+    const next: Record<string, string> = {};
+    if (!name.trim()) next.name = 'Enter your business name.';
+    if (email.trim() && !isEmail(email)) next.email = 'Enter a valid email address.';
+    if (cleanPhone && !isE164(cleanPhone)) next.phone = 'Use international format, e.g. +18765550123.';
+    if (avatar.trim() && !isHttpsUrl(avatar)) next.avatar = 'Logo link must start with https://';
+    setErrors(next);
+    if (Object.keys(next).length) return setFormError('Please fix the highlighted fields.');
+
+    // PATCH only what changed; the API rejects an empty body.
+    const candidate: Record<string, string> = { name: name.trim(), email: email.trim().toLowerCase(), telephone: cleanPhone, avatar: avatar.trim() };
+    const body = Object.fromEntries(Object.entries(candidate).filter(([key, value]) => value && value !== str(initial?.[key])));
+    if (!Object.keys(body).length) {
+      router.back();
       return;
     }
-    setError(null);
-    setSaved(false);
-    setWorking(true);
+    setFormError(null);
+    setSaving(true);
     try {
-      const result = unwrapData<Company | null>(await request('/companies', { method: 'PATCH', body }));
-      setCompany(result);
-      setValues(Object.fromEntries(fields.map((field) => [field.key, result?.[field.key] == null ? '' : String(result[field.key])])));
-      setSaved(true);
+      await request('/companies', { method: 'PATCH', body });
+      toast.success('Profile saved');
+      router.back();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to save company profile.');
+      setFormError(safeMessage(cause));
     } finally {
-      setWorking(false);
+      setSaving(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <PageHeader eyebrow="BUSINESS SETTINGS" title="Company profile" subtitle="Keep your business identity and contact details current." />
-          {error ? <InlineNotice message={error} /> : null}
-          {saved ? <InlineNotice message="Company profile saved." tone="info" /> : null}
-          {!loading && !company ? (
-            <InlineNotice message="No company profile was returned for this account. Company creation is not available through the current API." tone="info" />
-          ) : null}
-          {loading ? <Text style={styles.helper}>Loading company profile…</Text> : null}
-          <View style={styles.form}>
-            {fields.map((field) => (
-              <FormField
-                key={field.key}
-                autoCapitalize={field.key === 'email' ? 'none' : 'words'}
-                keyboardType={field.keyboardType || 'default'}
-                label={field.label}
-                onChangeText={(text) => setValues((current) => ({ ...current, [field.key]: text }))}
-                value={values[field.key] || ''}
-              />
-            ))}
-            <AppButton label="Save profile" loading={working || loading} onPress={() => void save()} />
-          </View>
-          <Text style={styles.helper}>The API supports editing company details but does not provide company creation or deletion.</Text>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <FormScreen error={formError} onSave={() => void save()} saveLabel="Save" saving={saving} title="Business profile">
+      {!initial ? <Banner message="No business profile was found for this account." tone="warning" /> : null}
+      <View style={styles.logo}>
+        {isHttpsUrl(avatar) ? (
+          <Image contentFit="cover" source={{ uri: avatar }} style={styles.logoImage} />
+        ) : (
+          <Avatar dark name={name || 'Business'} size={88} />
+        )}
+      </View>
+      <Field autoCapitalize="words" error={errors.name} label="Business name" onChangeText={setName} value={name} />
+      <Field autoCapitalize="none" error={errors.email} keyboardType="email-address" label="Business email" maxLength={254} onChangeText={setEmail} value={email} />
+      <Field autoComplete="tel" error={errors.phone} keyboardType="phone-pad" label="Phone" maxLength={20} onChangeText={setPhone} placeholder="+1 876 555 0123" value={phone} />
+      <Field autoCapitalize="none" autoCorrect={false} error={errors.avatar} hint="Optional · https:// link to your logo" keyboardType="url" label="Logo link" maxLength={2048} onChangeText={setAvatar} value={avatar} />
+    </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Brand.canvas },
-  flex: { flex: 1 },
-  content: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', padding: 20, paddingBottom: 32 },
-  form: { backgroundColor: Brand.white, borderWidth: 1, borderColor: Brand.border, borderRadius: 20, padding: 17 },
-  helper: { color: Brand.muted, fontSize: 12, lineHeight: 18, marginTop: 13 },
+  logo: { alignItems: 'center', marginBottom: Spacing.xl },
+  logoImage: { width: 88, height: 88, borderRadius: 44, backgroundColor: Colors.surface },
 });

@@ -9,34 +9,38 @@ npm install
 npx expo start
 ```
 
-Set the API origin before signing in. GigGuru's API prefix defaults to
-`/api/v1`; it is automatically omitted for JSONPlaceholder. Set
-`EXPO_PUBLIC_API_PATH_PREFIX` to an empty value when another server serves
-routes from its root:
+Set the API origin before signing in (HTTPS is required outside development).
+The API prefix defaults to `/api/v1`; override it with `EXPO_PUBLIC_API_PATH_PREFIX`.
 
 ```sh
 EXPO_PUBLIC_API_BASE_URL=https://your-api-host
 ```
 
-For a safe connectivity check during development, you can use JSONPlaceholder:
+Biometric app lock uses `expo-local-authentication`. Face ID can't be tested in
+Expo Go on iOS — use a development build (`eas build --profile development`).
 
-```sh
-EXPO_PUBLIC_API_BASE_URL=https://jsonplaceholder.typicode.com
-```
+## App structure
 
-The development sign-in screen's **Test API connection** action performs only
-an unauthenticated `GET /posts/1`. The client blocks other methods, request
-bodies, and authentication headers for JSONPlaceholder. This sample API does
-not implement GigGuru sign-in or merchant routes. Keep credentials and tokens
-out of source control. Native sign-in tokens use iOS Keychain / Android
-Keystore-backed SecureStore; web sessions stay in memory only.
+- **Home** – today at a glance, the next booking, one-tap Start / Complete / No-show, and anything that needs attention (orders to process, overdue invoices).
+- **Calendar** – month view with booking dots; tap a day, tap a booking.
+- **Create (+)** – one sheet for every "new" flow: booking, invoice, service, product.
+- **Sales** – orders and invoices with filters; one-tap order status steps, invoice reminders and cancellation.
+- **Account** – catalog, business hours, locations, addresses, business profile, billing history, login & security.
 
-## Current scope
+Booking times, durations, categories and hours are all chosen by tapping — no typing dates or enum values. Enum values mirror the backend Prisma schema in `src/constants/enums.ts`.
 
-- The native splash screen shows the GigGuru mark; unauthenticated users see a welcome and sign-in screen.
-- Authenticated users have Home, Manage, Activity and Profile tabs, with separate product, service, address, branch, appointment, schedule and company screens.
-- Product, service, address and branch endpoints support create/read/update/delete. Appointments support create/read/edit/status/rescheduling, schedules support read/update, and company profiles support read/update. The screens intentionally do not offer unsupported delete or create operations.
-- Payment endpoints are read-only. Checkout, deposits, refunds, payment confirmation, customer-facing booking and public discovery need backend support before they can be represented as working features.
+## Security
+
+- Tokens live in iOS Keychain / Android Keystore (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`, never backed up); web sessions stay in memory only. Android `allowBackup` is off.
+- Optional biometric app lock (relocks after 60s in the background) and a privacy cover in the app switcher.
+- Proactive, single-flight token refresh; the app signs out automatically when the server rejects the refresh token. Sign-out revokes tokens server-side.
+- 20s request timeouts, HTTPS-only base URL in production, path-injection guards, and server errors sanitized before display.
+- Client-side sign-in throttling with exponential backoff on top of the API's rate limits; screens only refetch stale data (>30s) to stay inside the 100 requests / 15 min budget.
+- Input validation (email, E.164 phone, password strength, https image links, money) before anything is sent.
+
+## API boundaries
+
+- Payment endpoints are read-only (shown as Billing history). Checkout, deposits, refunds, payment confirmation, customer-facing booking and public discovery need backend support before they can be represented as working features.
 
 Read [AI_MOBILE_API_CONTEXT.md](./AI_MOBILE_API_CONTEXT.md) for endpoint contracts, token handling and API boundaries.
 

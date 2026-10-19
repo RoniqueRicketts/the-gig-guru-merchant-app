@@ -9,7 +9,11 @@
     "scheme": "thegiggurumerchantapp",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/images/gigguru-app-icon.png"
+      "icon": "./assets/images/gigguru-app-icon.png",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,6 +21,12 @@
         "foregroundImage": "./assets/images/lime-green-logo.png",
         "monochromeImage": "./assets/images/lime-green-logo.png"
       },
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -33,7 +43,13 @@
           "imageWidth": 68
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID to unlock your business data."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -1,70 +1,112 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text } from 'react-native';
 
-import { AppButton, FormField, InlineNotice, PageHeader } from '@/components/ui';
-import { Brand } from '@/constants/theme';
+import { PasswordChecklist } from '@/components/password-checklist';
+import { Banner, Button, Field, Screen } from '@/components/ui';
+import { Spacing, Type } from '@/constants/theme';
 import { request } from '@/lib/api';
+import { haptic } from '@/lib/haptics';
+import { isEmail, isStrongPassword, safeMessage } from '@/lib/security';
+
+type Step = 'email' | 'code' | 'done';
 
 export default function ResetPasswordScreen() {
   const params = useLocalSearchParams<{ email?: string }>();
-  const [email, setEmail] = useState(params.email || '');
+  // Only accept a well-formed email from the deep link; never trust arbitrary params.
+  const [email, setEmail] = useState(() => (params.email && isEmail(params.email) ? params.email : ''));
+  const [step, setStep] = useState<Step>('email');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
 
-  const submit = async () => {
+  const sendCode = async () => {
     setError(null);
-    if (!email.trim() || !code.trim() || !password) {
-      setError('Enter your email, verification code and a new password.');
-      return;
+    if (!isEmail(email)) return setError('Enter a valid email address.');
+    setWorking(true);
+    try {
+      await request('/auth/forget-password', { method: 'POST', body: { email: email.trim().toLowerCase() }, authenticated: false });
+      setStep('code');
+    } catch (cause) {
+      setError(safeMessage(cause));
+    } finally {
+      setWorking(false);
     }
+  };
+
+  const reset = async () => {
+    setError(null);
+    if (!/^\d{4,8}$/.test(code.trim())) return setError('Enter the verification code from your email.');
+    if (!isStrongPassword(password)) return setError('Choose a password that meets every requirement.');
     setWorking(true);
     try {
       await request('/auth/confirm-forget-password', {
         method: 'POST',
-        body: { email: email.trim(), code: code.trim(), password },
+        body: { email: email.trim().toLowerCase(), code: code.trim(), password },
         authenticated: false,
       });
-      setDone(true);
+      haptic.success();
+      setPassword('');
+      setStep('done');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to reset your password.');
+      setError(safeMessage(cause));
     } finally {
       setWorking(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <PageHeader eyebrow="ACCOUNT ACCESS" title="Reset password" subtitle="Use the code sent to your email." />
-          <View style={styles.card}>
-            {error ? <InlineNotice message={error} /> : null}
-            {done ? <InlineNotice message="Your password has been updated. You can now sign in." tone="info" /> : null}
-            <FormField autoCapitalize="none" keyboardType="email-address" label="Email address" onChangeText={setEmail} value={email} />
-            <FormField autoCapitalize="none" label="Verification code" onChangeText={setCode} value={code} />
-            <FormField autoCapitalize="none" label="New password" onChangeText={setPassword} secureTextEntry value={password} />
-            <Text style={styles.hint}>At least 8 characters, with uppercase, lowercase, number and symbol.</Text>
-            <AppButton
-              label={done ? 'Return to sign in' : 'Save new password'}
-              loading={working}
-              onPress={() => (done ? router.replace('/') : void submit())}
-            />
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <Screen edges={['left', 'right', 'bottom']}>
+      {step === 'email' ? (
+        <>
+          <Text style={[Type.caption, styles.lead]}>Enter your account email and we&apos;ll send you a verification code.</Text>
+          {error ? <Banner message={error} /> : null}
+          <Field
+            autoCapitalize="none"
+            autoComplete="email"
+            autoFocus
+            keyboardType="email-address"
+            label="Email"
+            maxLength={254}
+            onChangeText={setEmail}
+            onSubmitEditing={() => void sendCode()}
+            returnKeyType="send"
+            value={email}
+          />
+          <Button label="Send code" loading={working} onPress={() => void sendCode()} />
+        </>
+      ) : step === 'code' ? (
+        <>
+          <Text style={[Type.caption, styles.lead]}>
+            If an account exists for {email.trim()}, a code is on its way. Enter it below with your new password.
+          </Text>
+          {error ? <Banner message={error} /> : null}
+          <Field
+            autoComplete="one-time-code"
+            keyboardType="number-pad"
+            label="Verification code"
+            maxLength={8}
+            onChangeText={(value) => setCode(value.replace(/\D/g, ''))}
+            textContentType="oneTimeCode"
+            value={code}
+          />
+          <Field autoCapitalize="none" autoComplete="new-password" label="New password" maxLength={256} onChangeText={setPassword} password textContentType="newPassword" value={password} />
+          <PasswordChecklist password={password} />
+          <Button label="Reset password" loading={working} onPress={() => void reset()} />
+          <Button label="Resend code" onPress={() => void sendCode()} style={styles.secondary} variant="ghost" />
+        </>
+      ) : (
+        <>
+          <Banner icon="check.circle" message="Your password has been reset. Sign in with your new password." tone="success" />
+          <Button label="Back to sign in" onPress={() => router.back()} />
+        </>
+      )}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Brand.canvas },
-  flex: { flex: 1 },
-  content: { width: '100%', maxWidth: 500, alignSelf: 'center', padding: 22, paddingTop: 28 },
-  card: { backgroundColor: Brand.white, borderRadius: 22, borderWidth: 1, borderColor: Brand.border, padding: 18 },
-  hint: { color: Brand.muted, fontSize: 12, marginBottom: 16 },
+  lead: { marginTop: Spacing.lg, marginBottom: Spacing.xl, lineHeight: 19 },
+  secondary: { marginTop: Spacing.sm },
 });
