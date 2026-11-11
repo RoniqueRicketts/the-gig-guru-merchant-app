@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,7 +12,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/ui/icon';
 import { Colors, HitTarget, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
@@ -20,49 +21,58 @@ import { haptic } from '@/lib/haptics';
 
 // ---------------------------------------------------------------- Layout
 
+/** Android gets the Material press ripple; iOS uses the standard highlight/opacity feedback. */
+export const ripple = { color: Colors.ripple } as const;
+const isAndroid = Platform.OS === 'android';
+
+/**
+ * Standard scrolling screen. The ScrollView is the screen's first native child and uses
+ * `contentInsetAdjustmentBehavior="automatic"`, so iOS large titles collapse on scroll, the
+ * tab bar / home indicator insets are applied by the system, and tapping a tab scrolls to top.
+ */
 export function Screen({
   children,
   scroll = true,
   refreshControl,
-  edges = ['top', 'left', 'right'],
+  edges,
   footer,
   contentStyle,
 }: {
   children: ReactNode;
   scroll?: boolean;
   refreshControl?: React.ReactElement<RefreshControlProps>;
+  /** Only `bottom` matters now: the native header owns the top inset. */
   edges?: Edge[];
   /** Pinned bottom area, e.g. a primary action button. */
   footer?: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
-  return (
-    <SafeAreaView edges={edges} style={styles.screen}>
-      {scroll ? (
-        <ScrollView
-          contentContainerStyle={[styles.scrollContent, contentStyle]}
-          keyboardDismissMode="on-drag"
-          keyboardShouldPersistTaps="handled"
-          refreshControl={refreshControl}
-          showsVerticalScrollIndicator={false}>
-          {children}
-        </ScrollView>
-      ) : (
-        <View style={[styles.fixedContent, contentStyle]}>{children}</View>
-      )}
-      {footer ? <View style={styles.footer}>{footer}</View> : null}
-    </SafeAreaView>
+  const insets = useSafeAreaInsets();
+  // iOS adjusts scroll insets itself; Android (edge-to-edge) and web need explicit padding.
+  const bottomPad = Platform.OS === 'ios' || footer ? 0 : insets.bottom;
+  const body = scroll ? (
+    <ScrollView
+      contentContainerStyle={[styles.scrollContent, { paddingBottom: Spacing.xxxl + bottomPad }, contentStyle]}
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardDismissMode="interactive"
+      keyboardShouldPersistTaps="handled"
+      refreshControl={refreshControl}
+      style={styles.screen}>
+      {children}
+    </ScrollView>
+  ) : (
+    <View style={[styles.fixedContent, contentStyle]}>{children}</View>
   );
-}
 
-export function LargeHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: ReactNode }) {
+  if (!footer && scroll) return body;
   return (
-    <View style={styles.header}>
-      <View style={styles.flex}>
-        <Text accessibilityRole="header" style={Type.largeTitle}>{title}</Text>
-        {subtitle ? <Text style={[Type.caption, styles.headerSubtitle]}>{subtitle}</Text> : null}
-      </View>
-      {right ? <View style={styles.headerRight}>{right}</View> : null}
+    <View collapsable={false} style={[styles.screen, !scroll && edges?.includes('bottom') && { paddingBottom: insets.bottom }]}>
+      {body}
+      {footer ? (
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
+          <View style={styles.footerInner}>{footer}</View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -86,8 +96,9 @@ export function Card({ children, style, onPress, accessibilityLabel }: { childre
     <Pressable
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
+      android_ripple={ripple}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, style, pressed && styles.pressed]}>
+      style={({ pressed }) => [styles.card, style, !isAndroid && pressed && styles.pressed]}>
       {children}
     </Pressable>
   );
@@ -125,6 +136,7 @@ export function Button({
       accessibilityHint={accessibilityHint}
       accessibilityRole="button"
       accessibilityState={{ disabled: inactive, busy: loading }}
+      android_ripple={variant === 'ghost' || variant === 'secondary' || variant === 'danger' ? ripple : { color: 'rgba(255,255,255,0.18)' }}
       disabled={inactive}
       onPress={() => {
         haptic.tap();
@@ -154,7 +166,7 @@ export function Button({
 const buttonPalette: Record<ButtonVariant, { bg: string; pressed: string; fg: string; border: string }> = {
   primary: { bg: Colors.primary, pressed: Colors.primaryPressed, fg: Colors.white, border: Colors.primary },
   dark: { bg: Colors.deep, pressed: Colors.ink, fg: Colors.white, border: Colors.deep },
-  secondary: { bg: Colors.surface, pressed: Colors.border, fg: Colors.text, border: Colors.border },
+  secondary: { bg: Colors.card, pressed: Colors.surface, fg: Colors.primary, border: Colors.border },
   ghost: { bg: 'transparent', pressed: Colors.surface, fg: Colors.primary, border: 'transparent' },
   danger: { bg: Colors.dangerTint, pressed: '#F9D6D6', fg: Colors.danger, border: Colors.dangerTint },
 };
@@ -175,6 +187,7 @@ export function IconButton({
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
+      android_ripple={{ ...ripple, borderless: true, radius: HitTarget / 2 }}
       hitSlop={6}
       onPress={() => {
         haptic.tap();
@@ -238,9 +251,10 @@ export function ListRow({
   leading,
   value,
   trailing,
+  accessory,
   onPress,
   destructive = false,
-  chevron = !!onPress,
+  chevron = !!onPress && !accessory,
 }: {
   title: string;
   subtitle?: string;
@@ -249,6 +263,8 @@ export function ListRow({
   leading?: ReactNode;
   value?: string;
   trailing?: ReactNode;
+  /** An interactive control (e.g. a small button) shown at the row's end, outside its press area. */
+  accessory?: ReactNode;
   onPress?: () => void;
   destructive?: boolean;
   chevron?: boolean;
@@ -270,13 +286,22 @@ export function ListRow({
     </>
   );
   if (!onPress) return <View style={styles.row}>{content}</View>;
-  return (
+  const row = (
     <Pressable
       accessibilityRole="button"
+      android_ripple={ripple}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && { backgroundColor: Colors.surface }]}>
+      style={({ pressed }) => [styles.row, accessory ? styles.flex : null, !isAndroid && pressed && styles.rowPressed]}>
       {content}
     </Pressable>
+  );
+  if (!accessory) return row;
+  // Interactive accessories sit beside the tappable row, never inside it (no nested buttons).
+  return (
+    <View style={styles.rowWithAccessory}>
+      {row}
+      <View style={styles.accessory}>{accessory}</View>
+    </View>
   );
 }
 
@@ -458,25 +483,19 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
   disabled: { opacity: 0.5 },
   screen: { flex: 1, backgroundColor: Colors.background },
-  scrollContent: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxxl },
+  scrollContent: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
   fixedContent: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   footer: {
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.border,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.card,
   },
-  header: { flexDirection: 'row', alignItems: 'center', paddingTop: Spacing.sm, paddingBottom: Spacing.lg, gap: Spacing.md },
-  headerSubtitle: { marginTop: 2 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  footerInner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   sectionTitle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: Spacing.xxl, marginBottom: Spacing.md },
   sectionAction: { color: Colors.primary, fontSize: 14, fontWeight: '600' },
-  card: { backgroundColor: Colors.background, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border, padding: Spacing.lg },
+  card: { backgroundColor: Colors.card, borderRadius: Radius.lg, padding: Spacing.lg, overflow: 'hidden' },
   button: {
     minHeight: 52,
     borderRadius: Radius.md,
@@ -495,14 +514,17 @@ const styles = StyleSheet.create({
   quickCircle: { width: 62, height: 62, borderRadius: 31, backgroundColor: Colors.tint, alignItems: 'center', justifyContent: 'center' },
   quickCirclePrimary: { backgroundColor: Colors.primary },
   quickLabel: { fontSize: 12, fontWeight: '500', color: Colors.text, textAlign: 'center' },
-  groupTitle: { marginBottom: Spacing.sm, marginLeft: Spacing.xs },
-  group: { backgroundColor: Colors.background, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
+  groupTitle: { marginBottom: Spacing.sm, marginLeft: Spacing.lg },
+  group: { backgroundColor: Colors.card, borderRadius: Radius.lg, overflow: 'hidden' },
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.border, marginLeft: 60 },
-  row: { minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  rowPressed: { backgroundColor: Colors.surface },
+  rowWithAccessory: { flexDirection: 'row', alignItems: 'center' },
+  accessory: { paddingRight: Spacing.lg },
+  row: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
   rowIcon: { width: 32, height: 32, borderRadius: Radius.sm, backgroundColor: Colors.tint, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: Colors.text },
+  rowTitle: { fontSize: 16, fontWeight: '400', color: Colors.text },
   rowSubtitle: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
-  rowValue: { fontSize: 15, color: Colors.textMuted, maxWidth: '45%' },
+  rowValue: { fontSize: 16, color: Colors.textMuted, maxWidth: '45%' },
   avatar: { backgroundColor: Colors.tint, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: Colors.primary, fontWeight: '800' },
   badge: { borderRadius: Radius.pill, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start' },
@@ -519,14 +541,14 @@ const styles = StyleSheet.create({
   skeletonLine: { height: 12, borderRadius: 6, backgroundColor: Colors.surface },
   loadingFooter: { paddingVertical: Spacing.xl },
   listEnd: { height: Spacing.xxl },
-  segmented: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: Radius.md, padding: 3, marginBottom: Spacing.md },
-  segment: { flex: 1, minHeight: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  segmentSelected: { backgroundColor: Colors.background, shadowColor: '#001900', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
-  segmentText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  segmented: { flexDirection: 'row', backgroundColor: Colors.fill, borderRadius: 9, padding: 2, marginBottom: Spacing.md },
+  segment: { flex: 1, minHeight: 32, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  segmentSelected: { backgroundColor: Colors.card, shadowColor: '#001900', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+  segmentText: { fontSize: 13, fontWeight: '600', color: Colors.text },
   segmentTextSelected: { color: Colors.text },
   chipScroller: { flexGrow: 0, marginHorizontal: -Spacing.lg, marginBottom: Spacing.md },
   chips: { gap: Spacing.sm, paddingHorizontal: Spacing.lg },
-  chip: { minHeight: 36, paddingHorizontal: 14, borderRadius: Radius.pill, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  chip: { minHeight: 34, paddingHorizontal: 14, borderRadius: Radius.pill, backgroundColor: Colors.fill, alignItems: 'center', justifyContent: 'center' },
   chipSelected: { backgroundColor: Colors.ink, borderColor: Colors.ink },
   chipText: { fontSize: 14, fontWeight: '600', color: Colors.text },
   chipTextSelected: { color: Colors.white },

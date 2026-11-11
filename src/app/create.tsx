@@ -44,12 +44,12 @@ export default function CreateSheet() {
 }
 
 const styles = StyleSheet.create({
-  root: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xxl, backgroundColor: Colors.background },
+  root: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xxl, backgroundColor: Colors.card },
   title: { marginBottom: Spacing.lg },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
-  tile: { width: '47.5%', flexGrow: 1, backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.lg, minHeight: 116 },
+  tile: { width: '47.5%', flexGrow: 1, backgroundColor: Colors.background, borderRadius: Radius.lg, padding: Spacing.lg, minHeight: 116 },
   pressed: { opacity: 0.7 },
-  iconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
+  iconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
   tileTitle: { fontSize: 16, fontWeight: '700', color: Colors.text },
   tileDetail: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
 });

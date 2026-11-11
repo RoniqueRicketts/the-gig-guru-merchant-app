@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   notes: { marginTop: Spacing.xl, gap: Spacing.sm },
   notesText: { lineHeight: 22 },
   actions: { marginTop: Spacing.xxl },
-  sheet: { flex: 1, backgroundColor: Colors.background },
+  sheet: { flex: 1, backgroundColor: Colors.card },
   sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
 });
 

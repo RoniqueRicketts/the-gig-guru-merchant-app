@@ -81,10 +81,9 @@ export default function DeliveriesScreen() {
                     onPress={() => router.push({ pathname: '/orders/[id]', params: { id: number } })}
                     subtitle={`${money(row.totalAmount, row.currency)} · ${dateLabel(row.createdAt)}`}
                     title={`Order #${number}`}
-                    trailing={
+                    accessory={
                       <Button label="Request" loading={busy === `ready:${number}`} onPress={() => requestCourier(number)} size="md" />
                     }
-                    chevron={false}
                   />
                 );
               })}
@@ -197,13 +196,13 @@ const styles = StyleSheet.create({
   route: { marginTop: Spacing.md },
   routeLine: { width: 2, height: 12, backgroundColor: Colors.border, marginLeft: 4 },
   stop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  stopDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: Colors.primary, backgroundColor: Colors.background },
+  stopDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: Colors.primary, backgroundColor: Colors.card },
   stopDotEnd: { backgroundColor: Colors.primary },
   stopLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.6, color: Colors.textFaint },
   stopValue: { fontSize: 14, fontWeight: '600', color: Colors.text },
   locate: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, minHeight: 44, marginTop: Spacing.sm },
   locateText: { flex: 1, fontSize: 14, fontWeight: '600', color: Colors.primary },
-  note: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.lg },
+  note: { backgroundColor: Colors.card, borderRadius: Radius.lg, padding: Spacing.lg },
   card: { borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.lg, padding: Spacing.lg, marginBottom: Spacing.md },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   cardIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.tint, alignItems: 'center', justifyContent: 'center' },

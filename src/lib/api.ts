@@ -5,8 +5,13 @@ const REQUEST_TIMEOUT_MS = 20_000;
 /** Refresh the ID token this long before it expires so requests don't fail mid-flight. */
 const REFRESH_SKEW_MS = 60_000;
 
+/**
+ * EXPO_PUBLIC_API_BASE_URL is the full API root, e.g. https://dashboard.thegigguru.biz/api/test,
+ * so routes are appended directly: `${base}/meta`, `${base}/auth/sign-in`, …
+ * EXPO_PUBLIC_API_PATH_PREFIX is only for deployments where the base is a bare host.
+ */
 const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, '');
-const apiPathPrefix = (process.env.EXPO_PUBLIC_API_PATH_PREFIX ?? '/api/v1').trim().replace(/^\/+|\/+$/g, '');
+const apiPathPrefix = (process.env.EXPO_PUBLIC_API_PATH_PREFIX ?? '').trim().replace(/^\/+|\/+$/g, '');
 
 export class ApiError extends Error {
   status: number;

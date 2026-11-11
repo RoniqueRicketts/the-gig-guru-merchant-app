@@ -2,7 +2,8 @@ import { router, Stack } from 'expo-router';
 import { RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { GatedOrError } from '@/components/gated-state';
-import { EmptyState, IconButton, ListGroup, ListRow, Screen, SkeletonList, StatusBadge } from '@/components/ui';
+import { HeaderButton } from '@/components/navigation';
+import { EmptyState, ListGroup, ListRow, Screen, SkeletonList, StatusBadge } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useQuery } from '@/hooks/use-api';
 import { get, rows, str, type Row } from '@/lib/format';
@@ -18,7 +19,7 @@ export default function QueuesScreen() {
       refreshControl={<RefreshControl onRefresh={() => void query.refresh()} refreshing={query.refreshing} tintColor={Colors.primary} />}>
       <Stack.Screen
         options={{
-          headerRight: () => (query.errorStatus === 402 ? null : <IconButton icon="plus" label="New queue" onPress={() => router.push('/queues/edit')} />),
+          headerRight: () => (query.errorStatus === 402 ? null : <HeaderButton icon="plus" label="New queue" onPress={() => router.push('/queues/edit')} />),
         }}
       />
       {query.loading ? (

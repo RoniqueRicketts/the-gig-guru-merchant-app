@@ -5,7 +5,6 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'r
 import { AppointmentCard, isOpenStatus, primaryActionFor } from '@/components/appointment-card';
 import { ClockCard } from '@/components/clock-card';
 import {
-  Avatar,
   Banner,
   EmptyState,
   Icon,
@@ -94,15 +93,9 @@ export default function HomeScreen() {
 
   return (
     <Screen refreshControl={<RefreshControl onRefresh={refreshAll} refreshing={refreshing} tintColor={Colors.primary} />}>
-      <View style={styles.header}>
-        <View style={styles.flex}>
-          <Text style={styles.hello}>{greeting()},</Text>
-          <Text numberOfLines={1} style={styles.name}>{businessName}</Text>
-        </View>
-        <Pressable accessibilityLabel="Account" accessibilityRole="button" onPress={() => router.navigate('/account')}>
-          <Avatar dark name={businessName} size={44} />
-        </Pressable>
-      </View>
+      <Text numberOfLines={1} style={styles.hello}>
+        {greeting()}, <Text style={styles.name}>{businessName}</Text>
+      </Text>
 
       {/* Today hero: the single most important thing right now, actionable in one tap. */}
       <Pressable
@@ -196,11 +189,9 @@ function HeroStat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   pressed: { opacity: 0.85 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingTop: Spacing.sm, paddingBottom: Spacing.lg },
-  hello: { fontSize: 15, color: Colors.textMuted },
-  name: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5, color: Colors.text },
+  hello: { fontSize: 15, color: Colors.textMuted, marginBottom: Spacing.md, marginLeft: Spacing.xs },
+  name: { color: Colors.text, fontWeight: '600' },
   hero: { backgroundColor: Colors.deep, borderRadius: Radius.xl, padding: Spacing.xl },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   heroLabel: { color: Colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1.2 },

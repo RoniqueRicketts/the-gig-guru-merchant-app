@@ -191,6 +191,6 @@ export default function NewAppointmentScreen() {
 const styles = StyleSheet.create({
   top: { height: Spacing.lg },
   error: { color: Colors.danger, fontSize: 13, marginTop: -Spacing.sm, marginBottom: Spacing.md },
-  card: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.lg, paddingBottom: 0, marginBottom: Spacing.lg },
+  card: { backgroundColor: Colors.card, borderRadius: Radius.lg, padding: Spacing.lg, paddingBottom: 0, marginBottom: Spacing.lg },
   cardTitle: { fontSize: 16, fontWeight: '700', color: Colors.text, marginBottom: Spacing.md },
 });

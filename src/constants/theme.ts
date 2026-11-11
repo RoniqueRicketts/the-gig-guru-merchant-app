@@ -1,3 +1,4 @@
+import { DefaultTheme, type Theme } from 'expo-router';
 import { Platform } from 'react-native';
 
 /**
@@ -12,8 +13,16 @@ export const Colors = {
   accent: '#02C800',
   white: '#FFFFFF',
 
-  background: '#FFFFFF',
-  surface: '#F4F7F4',
+  /** Grouped screen background (iOS Settings style); cards and list groups sit on it in white. */
+  background: '#F2F5F2',
+  /** Cards, list groups, plain lists, sheets and inputs. */
+  card: '#FFFFFF',
+  /** Neutral fill for chips, thumbnails and tiles; visible on both background and card. */
+  surface: '#E9EEE9',
+  /** Translucent fill for search fields and segmented controls (iOS tertiarySystemFill). */
+  fill: 'rgba(118, 128, 118, 0.14)',
+  /** Android press ripple. */
+  ripple: 'rgba(0, 25, 0, 0.10)',
   border: '#E3E9E3',
   hairline: '#EDF1ED',
   text: '#001900',
@@ -67,3 +76,17 @@ export const Shadow = Platform.select({
 /** Minimum touch target recommended by Apple HIG and Material. */
 export const HitTarget = 44;
 export const MaxContentWidth = 560;
+
+/** Navigation theme: drives native headers, the web tab bar and screen backgrounds. */
+export const NavigationTheme: Theme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: Colors.primary,
+    background: Colors.background,
+    card: Colors.background,
+    text: Colors.text,
+    border: Colors.border,
+    notification: Colors.danger,
+  },
+};

@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -6,26 +6,32 @@ import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LockScreen, PrivacyCover } from '@/components/lock-screen';
+import { plainListOptions, stackScreenOptions } from '@/components/navigation';
 import { ErrorState, ToastProvider } from '@/components/ui';
-import { Colors } from '@/constants/theme';
+import { Colors, NavigationTheme } from '@/constants/theme';
 import { AppLockProvider, useAppLock } from '@/lib/app-lock';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { CatalogProvider, useCatalogState } from '@/lib/catalog';
 
 void SplashScreen.preventAutoHideAsync();
 
+/** Deep links (notifications, URLs) open on top of the tabs, so the back button always has somewhere to go. */
+export const unstable_settings = { anchor: '(tabs)' };
+
 export default function RootLayout() {
   return (
-    <CatalogProvider>
-      <AuthProvider>
-        <AppLockProvider>
-          <ToastProvider>
-            <StatusBar style="dark" />
-            <RootNavigator />
-          </ToastProvider>
-        </AppLockProvider>
-      </AuthProvider>
-    </CatalogProvider>
+    <ThemeProvider value={NavigationTheme}>
+      <CatalogProvider>
+        <AuthProvider>
+          <AppLockProvider>
+            <ToastProvider>
+              <StatusBar style="dark" />
+              <RootNavigator />
+            </ToastProvider>
+          </AppLockProvider>
+        </AuthProvider>
+      </CatalogProvider>
+    </ThemeProvider>
   );
 }
 
@@ -62,15 +68,7 @@ function RootNavigator() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <Stack
-        screenOptions={{
-          contentStyle: { backgroundColor: Colors.background },
-          headerShadowVisible: false,
-          headerTintColor: Colors.primary,
-          headerTitleStyle: { color: Colors.text, fontWeight: '700' },
-          headerStyle: { backgroundColor: Colors.background },
-          headerBackButtonDisplayMode: 'minimal',
-        }}>
+      <Stack screenOptions={stackScreenOptions}>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="sign-in" options={{ headerShown: false }} />
           <Stack.Screen name="reset-password" options={{ title: 'Reset password', presentation: 'modal' }} />
@@ -86,7 +84,7 @@ function RootNavigator() {
               sheetAllowedDetents: 'fitToContents',
               sheetGrabberVisible: true,
               headerShown: false,
-              contentStyle: { backgroundColor: Colors.background },
+              contentStyle: { backgroundColor: Colors.card },
             }}
           />
           <Stack.Screen name="appointments/new" options={{ title: 'New booking', presentation: 'modal' }} />
@@ -95,7 +93,7 @@ function RootNavigator() {
           <Stack.Screen name="invoices/[id]" options={{ title: 'Invoice' }} />
           <Stack.Screen name="orders/[id]" options={{ title: 'Order' }} />
           <Stack.Screen name="billing" options={{ title: 'Billing history' }} />
-          <Stack.Screen name="catalog" options={{ title: 'Catalog' }} />
+          <Stack.Screen name="catalog" options={{ ...plainListOptions, title: 'Catalog' }} />
           <Stack.Screen name="services/edit" options={{ title: 'Service', presentation: 'modal' }} />
           <Stack.Screen name="products/edit" options={{ title: 'Product', presentation: 'modal' }} />
           <Stack.Screen name="branches/index" options={{ title: 'Locations' }} />
@@ -105,7 +103,7 @@ function RootNavigator() {
           <Stack.Screen name="hours" options={{ title: 'Business hours' }} />
           <Stack.Screen name="company" options={{ title: 'Business profile' }} />
           <Stack.Screen name="security" options={{ title: 'Login & security' }} />
-          <Stack.Screen name="team/index" options={{ title: 'Team' }} />
+          <Stack.Screen name="team/index" options={{ ...plainListOptions, title: 'Team' }} />
           <Stack.Screen name="team/edit" options={{ title: 'Team member', presentation: 'modal' }} />
           <Stack.Screen name="team/role" options={{ title: 'Role', presentation: 'modal' }} />
           <Stack.Screen name="queues/index" options={{ title: 'Queues' }} />
@@ -113,7 +111,7 @@ function RootNavigator() {
           <Stack.Screen name="queues/edit" options={{ title: 'Queue', presentation: 'modal' }} />
           <Stack.Screen name="attendance" options={{ title: 'Attendance' }} />
           <Stack.Screen name="deliveries" options={{ title: 'Deliveries' }} />
-          <Stack.Screen name="receipts/index" options={{ title: 'Sales receipts' }} />
+          <Stack.Screen name="receipts/index" options={{ ...plainListOptions, title: 'Sales receipts' }} />
           <Stack.Screen name="receipts/[id]" options={{ title: 'Receipt' }} />
         </Stack.Protected>
       </Stack>

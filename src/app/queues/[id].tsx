@@ -1,4 +1,5 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { HeaderButton } from '@/components/navigation';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,7 +12,7 @@ import {
   EmptyState,
   Field,
   Icon,
-  IconButton,
+  
   ListGroup,
   ListRow,
   Screen,
@@ -107,7 +108,7 @@ export default function QueueBoardScreen() {
       <Stack.Screen
         options={{
           title: str(queue?.name) || 'Queue',
-          headerRight: () => <IconButton icon="edit" label="Edit queue" onPress={() => router.push({ pathname: '/queues/edit', params: { id } })} />,
+          headerRight: () => <HeaderButton icon="edit" label="Edit queue" onPress={() => router.push({ pathname: '/queues/edit', params: { id } })} />,
         }}
       />
 
@@ -356,8 +357,8 @@ const styles = StyleSheet.create({
   statLabel: { color: '#B8CCB7', fontSize: 13, marginTop: 2 },
   heroNote: { color: '#B8CCB7', fontSize: 13, marginTop: Spacing.md },
   counterPick: { marginTop: Spacing.sm },
-  idle: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.lg, alignItems: 'center' },
-  serving: { borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.lg, padding: Spacing.lg, marginBottom: Spacing.md, backgroundColor: Colors.background },
+  idle: { backgroundColor: Colors.card, borderRadius: Radius.lg, padding: Spacing.lg, alignItems: 'center' },
+  serving: { borderRadius: Radius.lg, padding: Spacing.lg, marginBottom: Spacing.md, backgroundColor: Colors.card },
   servingTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   bigNumber: { minWidth: 56, height: 56, borderRadius: Radius.md, paddingHorizontal: Spacing.sm, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
   bigNumberText: { color: Colors.white, fontSize: 24, fontWeight: '800' },
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
   servingActions: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.lg },
   number: { width: 40, height: 40, borderRadius: Radius.sm, backgroundColor: Colors.tint, alignItems: 'center', justifyContent: 'center' },
   numberText: { color: Colors.primary, fontSize: 15, fontWeight: '800' },
-  sheet: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: Spacing.lg },
+  sheet: { flex: 1, backgroundColor: Colors.card, paddingHorizontal: Spacing.lg },
   sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.lg },
   sheetLead: { marginBottom: Spacing.lg, lineHeight: 19 },
 });

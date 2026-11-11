@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { AppointmentCard } from '@/components/appointment-card';
-import { Banner, EmptyState, IconButton, LargeHeader, Screen, SkeletonList, Button } from '@/components/ui';
+import { Banner, Button, Card, EmptyState, IconButton, Screen, SkeletonList } from '@/components/ui';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { usePagedList } from '@/hooks/use-api';
 import { qs } from '@/lib/api';
@@ -74,11 +74,7 @@ export default function CalendarScreen() {
 
   return (
     <Screen refreshControl={<RefreshControl onRefresh={() => void list.refresh()} refreshing={list.refreshing} tintColor={Colors.primary} />}>
-      <LargeHeader
-        right={<IconButton icon="plus" label="New booking" onPress={() => router.push('/appointments/new')} variant="filled" />}
-        title="Calendar"
-      />
-
+      <Card style={styles.monthCard}>
       <View style={styles.monthBar}>
         <Text style={styles.monthTitle}>{month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</Text>
         <View style={styles.monthControls}>
@@ -124,6 +120,7 @@ export default function CalendarScreen() {
           );
         })}
       </View>
+      </Card>
 
       <View style={styles.dayHeader}>
         <Text style={styles.dayTitle}>
@@ -152,14 +149,15 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  monthBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm },
+  monthCard: { paddingHorizontal: Spacing.sm, paddingTop: Spacing.sm, paddingBottom: 0 },
+  monthBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.xs, paddingLeft: Spacing.sm },
   monthTitle: { fontSize: 18, fontWeight: '700', color: Colors.text },
   monthControls: { flexDirection: 'row', alignItems: 'center' },
   todayPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.pill, backgroundColor: Colors.tint, marginRight: Spacing.xs },
   todayPillText: { color: Colors.primary, fontSize: 13, fontWeight: '700' },
   weekdays: { flexDirection: 'row' },
   weekday: { width: `${100 / 7}%`, textAlign: 'center', fontSize: 12, fontWeight: '600', color: Colors.textFaint, paddingVertical: Spacing.sm },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: Spacing.md },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: Spacing.sm },
   cell: { width: `${100 / 7}%`, height: 50, alignItems: 'center', justifyContent: 'center' },
   cellInner: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   cellSelected: { backgroundColor: Colors.ink },
@@ -174,10 +172,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.xl,
     marginBottom: Spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
+    paddingHorizontal: Spacing.xs,
   },
   dayTitle: { fontSize: 18, fontWeight: '700', color: Colors.text },
   dayCount: { fontSize: 13, color: Colors.textMuted },

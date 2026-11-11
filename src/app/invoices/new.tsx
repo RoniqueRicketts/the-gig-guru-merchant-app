@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   section: { fontSize: 18, fontWeight: '700', color: Colors.text, marginBottom: Spacing.md, marginTop: Spacing.sm },
   line: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border, marginBottom: Spacing.sm },
   lineName: { fontSize: 15, fontWeight: '600', color: Colors.text },
-  total: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: Radius.md, padding: Spacing.lg, marginBottom: Spacing.xl },
+  total: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: Colors.card, borderRadius: Radius.md, padding: Spacing.lg, marginBottom: Spacing.xl },
   totalValue: { fontSize: 22, fontWeight: '800', color: Colors.text },
   disclaimer: { fontSize: 12, color: Colors.textMuted, lineHeight: 17, marginBottom: Spacing.lg },
 });

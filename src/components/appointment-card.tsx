@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Avatar, Button, Card, StatusBadge, useToast } from '@/components/ui';
+import { Avatar, Button, Card, ripple, StatusBadge, useToast } from '@/components/ui';
 import type { AppointmentNextStatus } from '@/constants/enums';
 import { Colors, Spacing } from '@/constants/theme';
 import { request, seg } from '@/lib/api';
@@ -58,11 +58,14 @@ export function AppointmentCard({ row, onChanged, showDay = false }: { row: Row;
   };
 
   return (
-    <Card
-      accessibilityLabel={`${customer}, ${appointment.service(row)} at ${timeLabel(row.start)}`}
-      onPress={id ? () => router.push({ pathname: '/appointments/[id]', params: { id } }) : undefined}
-      style={styles.card}>
-      <View style={styles.top}>
+    <Card style={styles.card}>
+      <Pressable
+        accessibilityLabel={`${customer}, ${appointment.service(row)} at ${timeLabel(row.start)}`}
+        accessibilityRole="button"
+        android_ripple={ripple}
+        disabled={!id}
+        onPress={() => router.push({ pathname: '/appointments/[id]', params: { id } })}
+        style={({ pressed }) => [styles.top, Platform.OS === 'ios' && pressed && styles.pressed]}>
         <View style={styles.time}>
           <Text style={styles.timeText}>{timeLabel(row.start)}</Text>
           {showDay ? <Text style={styles.dayText}>{relativeDay(row.start)}</Text> : null}
@@ -73,7 +76,7 @@ export function AppointmentCard({ row, onChanged, showDay = false }: { row: Row;
           <Text numberOfLines={1} style={styles.detail}>{appointment.service(row)}</Text>
         </View>
         <StatusBadge status={status} />
-      </View>
+      </Pressable>
       {action && id ? (
         <View style={styles.actions}>
           <Button
@@ -105,15 +108,16 @@ export function AppointmentCard({ row, onChanged, showDay = false }: { row: Row;
 }
 
 const styles = StyleSheet.create({
-  card: { padding: Spacing.md, marginBottom: Spacing.sm },
-  top: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  card: { padding: 0, marginBottom: Spacing.sm },
+  top: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md },
+  pressed: { opacity: 0.6 },
   time: { width: 64 },
   timeText: { fontSize: 14, fontWeight: '700', color: Colors.text },
   dayText: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   copy: { flex: 1 },
   name: { fontSize: 15, fontWeight: '700', color: Colors.text },
   detail: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
-  actions: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.md },
+  actions: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.md, paddingBottom: Spacing.md },
   primary: { flex: 1 },
   secondary: { flex: 1 },
 });

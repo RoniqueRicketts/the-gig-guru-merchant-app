@@ -1,8 +1,9 @@
 import { router, Stack, type Href } from 'expo-router';
+import { HeaderButton } from '@/components/navigation';
 import { type ReactNode } from 'react';
 import { RefreshControl, StyleSheet } from 'react-native';
 
-import { EmptyState, ErrorState, IconButton, ListGroup, Screen, SkeletonList, type IconName } from '@/components/ui';
+import { EmptyState, ErrorState, ListGroup, Screen, SkeletonList, type IconName } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useQuery } from '@/hooks/use-api';
 import { rows, type Row } from '@/lib/format';
@@ -32,7 +33,7 @@ export function SimpleListScreen({
     <Screen
       edges={['left', 'right']}
       refreshControl={<RefreshControl onRefresh={() => void query.refresh()} refreshing={query.refreshing} tintColor={Colors.primary} />}>
-      <Stack.Screen options={{ headerRight: () => <IconButton icon="plus" label={addLabel} onPress={() => router.push(addHref)} /> }} />
+      <Stack.Screen options={{ headerRight: () => <HeaderButton icon="plus" label={addLabel} onPress={() => router.push(addHref)} /> }} />
       {query.loading ? (
         <SkeletonList count={3} />
       ) : query.error && !items.length ? (

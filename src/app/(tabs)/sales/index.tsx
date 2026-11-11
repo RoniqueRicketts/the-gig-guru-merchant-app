@@ -1,21 +1,19 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import {
   ErrorState,
   EmptyState,
   FilterChips,
   Icon,
-  IconButton,
-  LargeHeader,
   LoadingFooter,
   Segmented,
   SkeletonList,
+  ripple,
   StatusBadge,
 } from '@/components/ui';
-import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { usePagedList } from '@/hooks/use-api';
 import { enumLabel } from '@/constants/enums';
 import { useCatalog } from '@/lib/catalog';
@@ -88,80 +86,81 @@ export default function SalesScreen() {
     return rows;
   }, [list.items, tab, invoiceFilter, search]);
 
-  return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safe}>
-      <View style={styles.container}>
-        <LargeHeader
-          right={
-            tab === 'invoices' ? <IconButton icon="plus" label="New invoice" onPress={() => router.push('/invoices/new')} variant="filled" /> : null
-          }
-          title="Sales"
-        />
-        <Segmented
-          onChange={(value) => {
-            setTab(value);
-            setSearch('');
-          }}
-          options={[
-            { value: 'orders', label: 'Orders' },
-            { value: 'invoices', label: 'Invoices' },
-          ]}
-          value={tab}
-        />
-        <View style={styles.search}>
-          <Icon color={Colors.textFaint} name="search" size={16} />
-          <TextInput
-            accessibilityLabel={`Search ${tab}`}
-            autoCapitalize="none"
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-            maxLength={80}
-            onChangeText={setSearch}
-            placeholder={tab === 'orders' ? 'Search order # or customer' : 'Search invoice # or customer'}
-            placeholderTextColor={Colors.textFaint}
-            returnKeyType="search"
-            style={styles.searchInput}
-            value={search}
-          />
-        </View>
-        {tab === 'orders' ? (
-          <FilterChips onChange={setOrderFilter} options={orderFilters} value={orderFilter} />
-        ) : (
-          <FilterChips onChange={setInvoiceFilter} options={invoiceFilters} value={invoiceFilter} />
-        )}
-      </View>
+  const searchPlaceholder = tab === 'orders' ? 'Order # or customer' : 'Invoice # or customer';
 
-      {list.loading ? (
-        <View style={styles.container}><SkeletonList count={6} /></View>
-      ) : list.error && !list.items.length ? (
-        <ErrorState message={list.error} onRetry={() => void list.refresh()} />
+  const header = (
+    <View style={styles.container}>
+      <Segmented
+        onChange={(value) => {
+          setTab(value);
+          setSearch('');
+        }}
+        options={[
+          { value: 'orders', label: 'Orders' },
+          { value: 'invoices', label: 'Invoices' },
+        ]}
+        value={tab}
+      />
+      {tab === 'orders' ? (
+        <FilterChips onChange={setOrderFilter} options={orderFilters} value={orderFilter} />
       ) : (
-        <FlatList
-          contentContainerStyle={styles.list}
-          data={visible}
-          keyExtractor={(row, index) => str(row.id) || String(index)}
-          ListEmptyComponent={
-            tab === 'orders' ? (
-              <EmptyState icon="order" message="When customers buy from you, their orders appear here." title={search ? 'No matches' : 'No orders'} />
-            ) : (
-              <EmptyState
-                action={search ? undefined : 'Create invoice'}
-                icon="invoice"
-                message={search ? 'Try a different search.' : 'Bill a customer in under a minute.'}
-                onAction={() => router.push('/invoices/new')}
-                title={search ? 'No matches' : 'No invoices'}
-              />
-            )
-          }
-          ListFooterComponent={<LoadingFooter visible={list.loadingMore} />}
-          onEndReached={() => void list.loadMore()}
-          onEndReachedThreshold={0.4}
-          refreshControl={<RefreshControl onRefresh={() => void list.refresh()} refreshing={list.refreshing} tintColor={Colors.primary} />}
-          renderItem={({ item }) => (tab === 'orders' ? <OrderRow row={item} /> : <InvoiceRow row={item} />)}
-        />
+        <FilterChips onChange={setInvoiceFilter} options={invoiceFilters} value={invoiceFilter} />
       )}
-    </SafeAreaView>
+    </View>
   );
+
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          headerSearchBarOptions: {
+            placeholder: searchPlaceholder,
+            autoCapitalize: 'none',
+            hideWhenScrolling: false,
+            tintColor: Colors.primary,
+            onChangeText: (event) => setSearch(event.nativeEvent.text),
+            onCancelButtonPress: () => setSearch(''),
+          },
+        }}
+      />
+      <FlatList
+        contentContainerStyle={styles.list}
+        contentInsetAdjustmentBehavior="automatic"
+        data={list.loading || (list.error && !list.items.length) ? [] : visible}
+        ItemSeparatorComponent={Separator}
+        keyboardDismissMode="on-drag"
+        keyExtractor={(row, index) => str(row.id) || String(index)}
+        ListEmptyComponent={
+          list.loading ? (
+            <View style={styles.container}><SkeletonList count={6} /></View>
+          ) : list.error && !list.items.length ? (
+            <ErrorState message={list.error} onRetry={() => void list.refresh()} />
+          ) : tab === 'orders' ? (
+            <EmptyState icon="order" message="When customers buy from you, their orders appear here." title={search ? 'No matches' : 'No orders'} />
+          ) : (
+            <EmptyState
+              action={search ? undefined : 'Create invoice'}
+              icon="invoice"
+              message={search ? 'Try a different search.' : 'Bill a customer in under a minute.'}
+              onAction={() => router.push('/invoices/new')}
+              title={search ? 'No matches' : 'No invoices'}
+            />
+          )
+        }
+        ListFooterComponent={<LoadingFooter visible={list.loadingMore} />}
+        ListHeaderComponent={header}
+        onEndReached={() => void list.loadMore()}
+        onEndReachedThreshold={0.4}
+        refreshControl={<RefreshControl onRefresh={() => void list.refresh()} refreshing={list.refreshing} tintColor={Colors.primary} />}
+        renderItem={({ item }) => (tab === 'orders' ? <OrderRow row={item} /> : <InvoiceRow row={item} />)}
+        style={styles.root}
+      />
+    </>
+  );
+}
+
+function Separator() {
+  return <View style={styles.separator} />;
 }
 
 function OrderRow({ row }: { row: Row }) {
@@ -170,8 +169,9 @@ function OrderRow({ row }: { row: Row }) {
   return (
     <Pressable
       accessibilityRole="button"
+      android_ripple={ripple}
       onPress={() => router.push({ pathname: '/orders/[id]', params: { id: number } })}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
+      style={({ pressed }) => [styles.row, Platform.OS === 'ios' && pressed && styles.rowPressed]}>
       <View style={styles.rowIcon}><Icon color={Colors.primary} name="order" size={20} /></View>
       <View style={styles.flex}>
         <Text numberOfLines={1} style={styles.rowTitle}>{order.shopper(row)}</Text>
@@ -193,8 +193,9 @@ function InvoiceRow({ row }: { row: Row }) {
   return (
     <Pressable
       accessibilityRole="button"
+      android_ripple={ripple}
       onPress={() => router.push({ pathname: '/invoices/[id]', params: { id: str(row.id) } })}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
+      style={({ pressed }) => [styles.row, Platform.OS === 'ios' && pressed && styles.rowPressed]}>
       <View style={styles.rowIcon}><Icon color={Colors.primary} name="invoice" size={20} /></View>
       <View style={styles.flex}>
         <Text numberOfLines={1} style={styles.rowTitle}>{invoice.customer(row)}</Text>
@@ -213,24 +214,14 @@ function InvoiceRow({ row }: { row: Row }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: Colors.background },
-  container: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.lg },
-  search: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    minHeight: 44,
-    marginBottom: Spacing.md,
-  },
-  searchInput: { flex: 1, fontSize: 16, color: Colors.text, paddingVertical: 10 },
+  root: { flex: 1, backgroundColor: Colors.card },
+  container: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.border, marginLeft: 72 },
   list: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingBottom: Spacing.xxxl, flexGrow: 1 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, minHeight: 72 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, minHeight: 68 },
   rowPressed: { backgroundColor: Colors.surface },
   rowIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.tint, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { fontSize: 15, fontWeight: '700', color: Colors.text },
+  rowTitle: { fontSize: 16, fontWeight: '600', color: Colors.text },
   rowSub: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
   rowEnd: { alignItems: 'flex-end', gap: 6 },
   amount: { fontSize: 15, fontWeight: '700', color: Colors.text },

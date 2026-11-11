@@ -1,9 +1,10 @@
 import { router, Stack } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { GatedOrError } from '@/components/gated-state';
-import { Avatar, EmptyState, Icon, IconButton, LoadingFooter, Segmented, SkeletonList, StatusBadge } from '@/components/ui';
+import { HeaderButton } from '@/components/navigation';
+import { Avatar, EmptyState, Icon, LoadingFooter, ripple, Segmented, SkeletonList, StatusBadge } from '@/components/ui';
 import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useDebounced, usePagedList, useQuery } from '@/hooks/use-api';
 import { qs } from '@/lib/api';
@@ -31,9 +32,9 @@ export default function TeamScreen() {
         options={{
           headerRight: () =>
             tab === 'people' ? (
-              <IconButton icon="person.add" label="Add team member" onPress={() => router.push('/team/edit')} />
+              <HeaderButton icon="person.add" label="Add team member" onPress={() => router.push('/team/edit')} />
             ) : (
-              <IconButton icon="plus" label="Add role" onPress={() => router.push('/team/role')} />
+              <HeaderButton icon="plus" label="Add role" onPress={() => router.push('/team/role')} />
             ),
         }}
       />
@@ -73,6 +74,7 @@ export default function TeamScreen() {
           <GatedOrError feature="Team" icon="team" message={people.error} onRetry={() => void people.refresh()} status={people.errorStatus} />
         ) : (
           <FlatList
+          contentInsetAdjustmentBehavior="automatic"
             contentContainerStyle={styles.list}
             data={people.items}
             keyExtractor={(row, index) => str(row.id) || String(index)}
@@ -98,6 +100,7 @@ export default function TeamScreen() {
         <GatedOrError feature="Roles" icon="badge" message={roles.error} onRetry={() => void roles.refresh()} status={roles.errorStatus} />
       ) : (
         <FlatList
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.list}
           data={roleRows}
           keyExtractor={(row, index) => str(row.id) || String(index)}
@@ -126,7 +129,8 @@ function PersonRow({ row }: { row: Row }) {
     <Pressable
       accessibilityRole="button"
       onPress={() => router.push({ pathname: '/team/edit', params: { id: str(row.id) } })}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
+      android_ripple={ripple}
+          style={({ pressed }) => [styles.row, Platform.OS === 'ios' && pressed && styles.rowPressed]}>
       <Avatar name={name} />
       <View style={styles.flex}>
         <View style={styles.titleLine}>
@@ -146,7 +150,8 @@ function RoleRow({ row }: { row: Row }) {
     <Pressable
       accessibilityRole="button"
       onPress={() => router.push({ pathname: '/team/role', params: { id: str(row.id) } })}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
+      android_ripple={ripple}
+          style={({ pressed }) => [styles.row, Platform.OS === 'ios' && pressed && styles.rowPressed]}>
       <View style={styles.rowIcon}><Icon color={Colors.primary} name="badge" size={20} /></View>
       <View style={styles.flex}>
         <Text numberOfLines={1} style={styles.rowTitle}>{str(row.name) || 'Role'}</Text>
@@ -160,16 +165,16 @@ function RoleRow({ row }: { row: Row }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  root: { flex: 1, backgroundColor: Colors.background },
+  root: { flex: 1, backgroundColor: Colors.card },
   container: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
   search: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.fill,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
-    minHeight: 44,
+    minHeight: 40,
     marginBottom: Spacing.sm,
   },
   searchInput: { flex: 1, fontSize: 16, color: Colors.text, paddingVertical: 10 },

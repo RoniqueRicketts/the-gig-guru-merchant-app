@@ -140,11 +140,11 @@ function StatTile({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   dayBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.lg },
-  dayArrow: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
+  dayArrow: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center' },
   disabled: { opacity: 0.35 },
   dayTitle: { fontSize: 18, fontWeight: '800', color: Colors.text },
   stats: { flexDirection: 'row', gap: Spacing.sm },
-  tile: { flex: 1, backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md },
+  tile: { flex: 1, backgroundColor: Colors.card, borderRadius: Radius.lg, padding: Spacing.md },
   tileValue: { fontSize: 22, fontWeight: '800', color: Colors.text, letterSpacing: -0.3 },
   tileLabel: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   group: { marginTop: Spacing.xxl },

@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
 import { useCallback } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { GatedOrError } from '@/components/gated-state';
-import { EmptyState, Icon, LoadingFooter, SkeletonList } from '@/components/ui';
+import { EmptyState, Icon, LoadingFooter, ripple, SkeletonList } from '@/components/ui';
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 import { usePagedList } from '@/hooks/use-api';
 import { qs } from '@/lib/api';
@@ -23,6 +23,7 @@ export default function ReceiptsScreen() {
 
   return (
     <FlatList
+          contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.list}
       data={list.items}
       keyExtractor={(row, index) => str(row.id) || String(index)}
@@ -35,7 +36,8 @@ export default function ReceiptsScreen() {
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push({ pathname: '/receipts/[id]', params: { id: str(item.id) } })}
-          style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
+          android_ripple={ripple}
+          style={({ pressed }) => [styles.row, Platform.OS === 'ios' && pressed && styles.rowPressed]}>
           <View style={styles.rowIcon}><Icon color={Colors.primary} name="receipt" size={20} /></View>
           <View style={styles.flex}>
             <Text numberOfLines={1} style={styles.rowTitle}>{str(item.buyerName) || 'Customer'}</Text>
@@ -53,13 +55,13 @@ export default function ReceiptsScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  root: { backgroundColor: Colors.background },
-  container: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: Spacing.lg },
+  root: { backgroundColor: Colors.card },
+  container: { flex: 1, backgroundColor: Colors.card, paddingHorizontal: Spacing.lg },
   list: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingVertical: Spacing.sm, paddingBottom: Spacing.xxxl, flexGrow: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, minHeight: 72 },
   rowPressed: { backgroundColor: Colors.surface },
   rowIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.tint, alignItems: 'center', justifyContent: 'center' },
-  rowTitle: { fontSize: 15, fontWeight: '700', color: Colors.text },
+  rowTitle: { fontSize: 16, fontWeight: '600', color: Colors.text },
   rowSub: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
   amount: { fontSize: 15, fontWeight: '700', color: Colors.text },
 });

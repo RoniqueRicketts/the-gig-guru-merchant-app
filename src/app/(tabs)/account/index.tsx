@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { confirmAction } from '@/components/appointment-card';
-import { Avatar, Icon, LargeHeader, ListGroup, ListRow, Screen } from '@/components/ui';
+import { Avatar, Icon, ListGroup, ListRow, Screen } from '@/components/ui';
 import { Colors, Spacing } from '@/constants/theme';
 import { useQuery } from '@/hooks/use-api';
 import { useAppLock } from '@/lib/app-lock';
@@ -19,8 +19,6 @@ export default function AccountScreen() {
 
   return (
     <Screen>
-      <LargeHeader title="Account" />
-
       <ListGroup>
         <ListRow
           leading={<Avatar dark name={name} size={52} />}

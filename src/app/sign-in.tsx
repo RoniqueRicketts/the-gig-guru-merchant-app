@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   logo: { width: 64, height: 64 },
   brand: { color: Colors.white, fontSize: 28, fontWeight: '800', letterSpacing: -0.5, marginTop: Spacing.md },
   tagline: { color: Colors.accent, fontSize: 15, fontWeight: '600', marginTop: Spacing.xs },
-  sheet: { flex: 1, backgroundColor: Colors.background, borderTopLeftRadius: Radius.xl + 6, borderTopRightRadius: Radius.xl + 6 },
+  sheet: { flex: 1, backgroundColor: Colors.card, borderTopLeftRadius: Radius.xl + 6, borderTopRightRadius: Radius.xl + 6 },
   form: { width: '100%', maxWidth: 480, alignSelf: 'center', padding: Spacing.xxl, paddingBottom: Spacing.xxxl },
   lead: { marginTop: Spacing.xs, marginBottom: Spacing.xl },
   secondary: { marginTop: Spacing.sm },

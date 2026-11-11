@@ -29,10 +29,9 @@ export default function AddressesScreen() {
             onPress={() => router.push({ pathname: '/addresses/edit', params: { id } })}
             subtitle={[str(row.line1), str(row.city), countryLabel(str(row.country))].filter(Boolean).join(', ')}
             title={str(row.name) || 'Address'}
-            trailing={
-              isDefault ? (
-                <StatusBadge label="Default" status="Completed" />
-              ) : (
+            trailing={isDefault ? <StatusBadge label="Default" status="Completed" /> : undefined}
+            accessory={
+              isDefault ? undefined : (
                 <Pressable
                   accessibilityLabel={`Make ${str(row.name)} the default address`}
                   accessibilityRole="button"

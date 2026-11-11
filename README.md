@@ -10,10 +10,10 @@ npx expo start
 ```
 
 Set the API origin before signing in (HTTPS is required outside development).
-The API prefix defaults to `/api/v1`; override it with `EXPO_PUBLIC_API_PATH_PREFIX`.
+`EXPO_PUBLIC_API_BASE_URL` is the full API root (routes are appended directly, e.g. `${base}/meta`). Set `EXPO_PUBLIC_API_PATH_PREFIX` only if the base is a bare host.
 
 ```sh
-EXPO_PUBLIC_API_BASE_URL=https://your-api-host
+EXPO_PUBLIC_API_BASE_URL=https://dashboard.thegigguru.biz/api/test
 ```
 
 Biometric app lock uses `expo-local-authentication`. Face ID can't be tested in
@@ -44,7 +44,7 @@ Booking times, durations, categories and hours are all chosen by tapping — no 
 
 The app never touches a database. Every read and write goes through the GigGuru API (`src/lib/api.ts`): auth, orders, bookings, map pins, everything.
 
-- **Option lists** (categories, countries, colors, statuses, which status changes are allowed) come from the API's public `GET /api/v1/meta` at launch and live in memory only (`src/lib/catalog.tsx`). The app ships with no copies; if the API can't be reached at launch it shows a retry screen.
+- **Option lists** (categories, countries, colors, statuses, which status changes are allowed) come from the API's public `GET /meta` at launch and live in memory only (`src/lib/catalog.tsx`). The app ships with no copies; if the API can't be reached at launch it shows a retry screen.
 - **Map details** are the API's coordinates: location pins (`branch.address.latitude/longitude`), order pickup points and tracking events, courier positions. "Open in Maps" hands those coordinates to the phone's maps app. "Pin my current location" reads the phone's GPS once (foreground only, with permission) and sends it to `PUT /branches/{id}/location`; the app then shows what the API saved.
 - On-device storage holds only the API's sign-in tokens (Keychain / Keystore) and the app-lock preference.
 

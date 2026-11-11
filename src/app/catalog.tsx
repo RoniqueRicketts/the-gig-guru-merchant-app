@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { EmptyState, ErrorState, Icon, IconButton, LoadingFooter, Segmented, SkeletonList } from '@/components/ui';
+import { HeaderButton } from '@/components/navigation';
+import { EmptyState, ErrorState, Icon, LoadingFooter, ripple, Segmented, SkeletonList } from '@/components/ui';
 import { enumLabel, serviceColorHex } from '@/constants/enums';
 import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { usePagedList } from '@/hooks/use-api';
@@ -32,7 +33,7 @@ export default function CatalogScreen() {
     <View style={styles.root}>
       <Stack.Screen
         options={{
-          headerRight: () => <IconButton icon="plus" label={`Add ${kind === 'services' ? 'service' : 'product'}`} onPress={() => router.push(editPath)} />,
+          headerRight: () => <HeaderButton icon="plus" label={`Add ${kind === 'services' ? 'service' : 'product'}`} onPress={() => router.push(editPath)} />,
         }}
       />
       <View style={styles.container}>
@@ -70,6 +71,7 @@ export default function CatalogScreen() {
         <ErrorState message={list.error} onRetry={() => void list.refresh()} />
       ) : (
         <FlatList
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.list}
           data={list.items}
           keyExtractor={(row, index) => str(row.id) || String(index)}
@@ -105,7 +107,8 @@ function CatalogRow({ kind, row }: { kind: Kind; row: Row }) {
     <Pressable
       accessibilityRole="button"
       onPress={() => router.push({ pathname: kind === 'services' ? '/services/edit' : '/products/edit', params: { id } })}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
+      android_ripple={ripple}
+          style={({ pressed }) => [styles.row, Platform.OS === 'ios' && pressed && styles.rowPressed]}>
       {kind === 'products' && isHttpsUrl(image) ? (
         <Image contentFit="cover" source={{ uri: image }} style={styles.thumb} />
       ) : (
@@ -124,16 +127,16 @@ function CatalogRow({ kind, row }: { kind: Kind; row: Row }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  root: { flex: 1, backgroundColor: Colors.background },
+  root: { flex: 1, backgroundColor: Colors.card },
   container: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
-  search: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, backgroundColor: Colors.surface, borderRadius: Radius.md, paddingHorizontal: Spacing.md, minHeight: 44, marginBottom: Spacing.sm },
+  search: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, backgroundColor: Colors.fill, borderRadius: Radius.md, paddingHorizontal: Spacing.md, minHeight: 40, marginBottom: Spacing.sm },
   searchInput: { flex: 1, fontSize: 16, color: Colors.text, paddingVertical: 10 },
   list: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingBottom: Spacing.xxxl, flexGrow: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, minHeight: 72 },
   rowPressed: { backgroundColor: Colors.surface },
   thumb: { width: 52, height: 52, borderRadius: Radius.md, backgroundColor: Colors.surface },
   thumbIcon: { alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.tint },
-  title: { fontSize: 15, fontWeight: '700', color: Colors.text },
+  title: { fontSize: 16, fontWeight: '600', color: Colors.text },
   detail: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
   price: { fontSize: 15, fontWeight: '700', color: Colors.text },
 });
