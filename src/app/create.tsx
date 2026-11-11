@@ -11,6 +11,8 @@ const actions: { icon: IconName; title: string; detail: string; href: Href }[] =
   { icon: 'invoice', title: 'Invoice', detail: 'Bill and send in seconds', href: '/invoices/new' },
   { icon: 'service', title: 'Service', detail: 'Add to your menu', href: '/services/edit' },
   { icon: 'product', title: 'Product', detail: 'List an item for sale', href: '/products/edit' },
+  { icon: 'person.add', title: 'Team member', detail: 'Add staff to your team', href: '/team/edit' },
+  { icon: 'queue', title: 'Queue', detail: 'Open a walk-in line', href: '/queues/edit' },
 ];
 
 /** Quick-create sheet opened from the center tab — every "new" flow is one tap away. */

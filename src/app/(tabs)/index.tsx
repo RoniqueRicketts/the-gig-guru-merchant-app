@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppointmentCard, isOpenStatus, primaryActionFor } from '@/components/appointment-card';
+import { ClockCard } from '@/components/clock-card';
 import {
   Avatar,
   Banner,
@@ -136,9 +137,14 @@ export default function HomeScreen() {
         <QuickAction icon="plus" label="New booking" onPress={() => router.push('/appointments/new')} tone="primary" />
         <QuickAction icon="invoice" label="Send invoice" onPress={() => router.push('/invoices/new')} />
         <QuickAction icon="order" label="Orders" onPress={() => router.navigate({ pathname: '/sales', params: { tab: 'orders' } })} />
+        <QuickAction icon="queue" label="Queue" onPress={() => router.push('/queues')} />
         <QuickAction icon="catalog" label="Catalog" onPress={() => router.push('/catalog')} />
+        <QuickAction icon="team" label="Team" onPress={() => router.push('/team')} />
+        <QuickAction icon="truck" label="Deliveries" onPress={() => router.push('/deliveries')} />
         <QuickAction icon="hours" label="Hours" onPress={() => router.push('/hours')} />
       </ScrollView>
+
+      <ClockCard />
 
       {today.error ? <Banner message={today.error} /> : null}
 

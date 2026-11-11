@@ -3,7 +3,8 @@ import { useState } from 'react';
 
 import { FormScreen } from '@/components/form-screen';
 import { Field, MultiChoiceChips, Select, SwitchRow, useToast } from '@/components/ui';
-import { enumLabel, ProductCategories } from '@/constants/enums';
+import { enumLabel } from '@/constants/enums';
+import { useCatalog } from '@/lib/catalog';
 import { useQuery } from '@/hooks/use-api';
 import { request, seg } from '@/lib/api';
 import { rows, str, type Row } from '@/lib/format';
@@ -29,6 +30,7 @@ export default function ProductEditScreen() {
 
 function ProductForm({ id, initial, branches }: { id?: string; initial: Row | null; branches: Row[] }) {
   const toast = useToast();
+  const { productCategories } = useCatalog();
   const branchProduct = rows(initial?.branchProducts)[0];
   const [name, setName] = useState(str(initial?.name));
   const [category, setCategory] = useState<string | null>(str(initial?.category) || null);
@@ -40,8 +42,9 @@ function ProductForm({ id, initial, branches }: { id?: string; initial: Row | nu
   const [images, setImages] = useState(Array.isArray(initial?.images) ? initial.images.map(str).join('\n') : '');
   const [shippable, setShippable] = useState(initial?.shippable !== false);
   const [branchIds, setBranchIds] = useState<string[]>(() => {
-    // Product detail exposes branch IDs via its prices.
-    const existing = [...new Set(rows(initial?.prices).map((entry) => str(entry.branchId)).filter(Boolean))];
+    // Product detail lists its locations on branchProducts (older payloads only via prices).
+    const source = rows(initial?.branchProducts).length ? rows(initial?.branchProducts) : rows(initial?.prices);
+    const existing = [...new Set(source.map((entry) => str(entry.branchId)).filter(Boolean))];
     if (existing.length) return existing;
     return branches.length === 1 ? [str(branches[0].id)] : [];
   });
@@ -56,7 +59,8 @@ function ProductForm({ id, initial, branches }: { id?: string; initial: Row | nu
     const next: Record<string, string> = {};
     if (!name.trim()) next.name = 'Give this product a name.';
     if (!category) next.category = 'Choose a category.';
-    if (amount === null) next.price = 'Enter a price greater than 0.';
+    // The payment processor rejects product prices below 1.00.
+    if (amount === null || amount < 1) next.price = 'Enter a price of at least 1.00.';
     if (stock === null) next.quantity = 'Enter a whole number.';
     if (imageList.length > 10) next.images = 'Up to 10 images.';
     else if (imageList.some((url) => !isHttpsUrl(url))) next.images = 'Image links must start with https://';
@@ -129,7 +133,7 @@ function ProductForm({ id, initial, branches }: { id?: string; initial: Row | nu
         error={errors.category}
         label="Category"
         onChange={setCategory}
-        options={ProductCategories.map((value) => ({ value, label: enumLabel(value) }))}
+        options={productCategories.map((value) => ({ value, label: enumLabel(value) }))}
         value={category}
       />
       {branches.length > 1 || errors.branches ? (

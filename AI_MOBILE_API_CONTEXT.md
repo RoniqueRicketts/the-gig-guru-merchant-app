@@ -160,6 +160,33 @@ Payments has **list and detail only**. There is no payment-intent, checkout, dep
 
 The users API manages company employees and searches public user records for authenticated use; it is not a public merchant/customer-search endpoint.
 
+### Additional merchant routes (verified against `server/api` on 2026-11-10)
+
+These exist in the backend and are used by the app, but were not in the original list above. All require the staff ID token.
+
+| Method and path | Query/body | Success |
+| --- | --- | --- |
+| `GET /meta` (public) | None | `{ data: { serviceCategories, serviceColors, productCategories, countries, addressLocations, businessTypes, orderStatuses, settableOrderStatuses, deliverableOrderStatuses, appointmentStatuses, appointmentNextStatuses, invoiceStatuses, itemCategories, sendVia } }`, derived from the API's own enums and schemas |
+| `PUT /branches/{id}/location` | `{ latitude, longitude }` | `{ data: branch }`; the branch needs an address first; pins it on the nearby map |
+| `GET /queues` | None | `{ data: Queue[] }` each with `branch { id, name }` and `waiting` |
+| `POST /queues` | `{ name, branchId, counters[], graceSeconds?, approachingPosition?, nextUpPosition?, defaultServiceSeconds? }` | `201 { data }` |
+| `PATCH /queues/{id}` | Non-empty subset of `{ name, counters[], isOpen, ...tuning }` | `{ data }` |
+| `GET /queues/{id}/board` | None | `{ data: { queue, tickets[], metrics } }` |
+| `POST /queues/{id}/walk-ins` | `{ guestName? }` | `201 { data: ticket }` |
+| `POST /queues/{id}/call-next` | `{ counter }` | `{ data: ticket }`; `404` when no one is waiting |
+| `POST /queues/tickets/{ticketId}/recall` \| `complete` \| `skip` | No body | `{ data }`; skip is refused during the grace period |
+| `GET /attendance/me` | None | `{ data: { id, clockInAt, branchName } \| null }` |
+| `POST /attendance/clock-in` / `clock-out` | `{ branchId? }` / `{ note? }` | `{ data }` (clock-out returns `{ seconds }`) |
+| `GET /attendance` | `date?` (`YYYY-MM-DD`), `tz` (IANA zone) | `{ data: { date, rows[], stats } }` |
+| `POST /attendance/{id}/end` | No body | `{ data: row }` |
+| `GET /deliveries` | None | `{ data: { enabled, outgoing[], ready[], ... } }` |
+| `POST /deliveries` | `{ orderNumber }` (order must be Pending, Processing or Awaiting_Shipment) | `201 { data }` |
+| `PATCH /deliveries/{id}/status` | `{ status: "Cancelled" }` for merchants | `{ data }` |
+| `GET /issued-invoices` | `kind` (`Sale` \| `Subscription`), `limit`, `offset` | `{ data, pagination: { limit, offset, total, hasMore } }` |
+| `GET /issued-invoices/{id}` | None | `{ data }` with `sections[]` |
+
+Queues and attendance are Premium features and return `402` otherwise. Schema changes since this document was first written: services accept `images[]` (https, max 8) and **default to `[]` on update, so always send the existing images back**; product sale prices must be at least `1.00`; addresses and branches accept an optional `latitude` + `longitude` pair.
+
 ## React Native implementation guidance for the consuming AI
 
 1. Build a typed API client around a configurable base URL. Attach the current ID token to every non-auth request; do not hardcode credentials, production URLs, or secrets.
@@ -169,7 +196,7 @@ The users API manages company employees and searches public user records for aut
 5. Follow server field names exactly (including `serviceId`, `assignedToId`, `branchId`, `nextStatus`, `current_password`, and `new_password`). Strict validation rejects extra fields.
 6. Use mobile-friendly forms, confirmation for destructive operations, readable price/status summaries, accessible touch targets, and clear validation errors. Do not show a success state before the server confirms success.
 7. If asked to build customer-facing booking, reviews, deposits, discovery, or checkout, explain which backend routes/data are missing and isolate that UI as unconnected/proposed rather than fabricating a working API call.
-8. Treat backend enum values and response records as source-of-truth. When a value set is not enumerated here, derive it from the relevant existing Prisma enum/schema in the repository; never guess.
+8. Treat backend enum values and response records as source-of-truth. Load every option list from `GET /meta`; never hardcode enum values in the app or connect to the database. If a list is missing from `/meta`, add it to the backend catalog (`app/utils/api/meta.ts`).
 
 ## Backend source map
 

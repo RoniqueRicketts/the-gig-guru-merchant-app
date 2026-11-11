@@ -17,26 +17,25 @@ import {
 } from '@/components/ui';
 import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { usePagedList } from '@/hooks/use-api';
+import { enumLabel } from '@/constants/enums';
+import { useCatalog } from '@/lib/catalog';
 import { qs } from '@/lib/api';
 import { dateLabel, invoice, money, order, str, toDate, type Row } from '@/lib/format';
 
 type Tab = 'orders' | 'invoices';
 
-const orderFilters = [
-  { value: 'all', label: 'All' },
-  { value: 'Pending', label: 'To process' },
-  { value: 'Processing', label: 'Processing' },
-  { value: 'Awaiting_Shipment', label: 'Ready to ship' },
-  { value: 'Completed', label: 'Completed' },
-  { value: 'Canceled', label: 'Canceled' },
-] as const;
+/** Friendlier names for some API statuses; everything else uses the API value's own label. */
+const filterLabels: Record<string, string> = {
+  Awaiting_Payment: 'Awaiting payment',
+  Pending: 'To process',
+  Awaiting_Shipment: 'Ready to ship',
+  Sent: 'Unpaid',
+};
 
-const invoiceFilters = [
-  { value: 'all', label: 'All' },
-  { value: 'Overdue', label: 'Overdue' },
-  { value: 'Sent', label: 'Unpaid' },
-  { value: 'Paid', label: 'Paid' },
-] as const;
+/** Filter chips are exactly the statuses the API lists in GET /meta. */
+function filtersFor(statuses: string[]) {
+  return [{ value: 'all', label: 'All' }, ...statuses.map((value) => ({ value, label: filterLabels[value] ?? enumLabel(value) }))];
+}
 
 export default function SalesScreen() {
   const params = useLocalSearchParams<{ tab?: string; filter?: string }>();
@@ -44,6 +43,9 @@ export default function SalesScreen() {
   const [orderFilter, setOrderFilter] = useState<string>('all');
   const [invoiceFilter, setInvoiceFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const catalog = useCatalog();
+  const orderFilters = useMemo(() => filtersFor(catalog.orderStatuses), [catalog.orderStatuses]);
+  const invoiceFilters = useMemo(() => filtersFor(catalog.invoiceStatuses), [catalog.invoiceStatuses]);
 
   // Deep links (e.g. Home's "3 orders to process") pick the tab and filter.
   const linkKey = `${params.tab ?? ''}:${params.filter ?? ''}`;
@@ -53,7 +55,7 @@ export default function SalesScreen() {
     if (params.tab === 'orders' || params.tab === 'invoices') {
       setTab(params.tab);
       setSearch('');
-      const options: readonly { value: string }[] = params.tab === 'orders' ? orderFilters : invoiceFilters;
+      const options = params.tab === 'orders' ? orderFilters : invoiceFilters;
       const filter = options.some((option) => option.value === params.filter) ? params.filter! : 'all';
       if (params.tab === 'orders') setOrderFilter(filter);
       else setInvoiceFilter(filter);
@@ -123,9 +125,9 @@ export default function SalesScreen() {
           />
         </View>
         {tab === 'orders' ? (
-          <FilterChips onChange={setOrderFilter} options={[...orderFilters]} value={orderFilter} />
+          <FilterChips onChange={setOrderFilter} options={orderFilters} value={orderFilter} />
         ) : (
-          <FilterChips onChange={setInvoiceFilter} options={[...invoiceFilters]} value={invoiceFilter} />
+          <FilterChips onChange={setInvoiceFilter} options={invoiceFilters} value={invoiceFilter} />
         )}
       </View>
 
@@ -178,7 +180,7 @@ function OrderRow({ row }: { row: Row }) {
         </Text>
       </View>
       <View style={styles.rowEnd}>
-        <Text style={styles.amount}>{money(row.totalAmount)}</Text>
+        <Text style={styles.amount}>{money(row.totalAmount, row.currency)}</Text>
         <StatusBadge status={row.status} />
       </View>
     </Pressable>

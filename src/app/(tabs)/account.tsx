@@ -46,8 +46,16 @@ export default function AccountScreen() {
         <ListRow icon="company" onPress={() => router.push('/company')} subtitle="Name, contact and logo" title="Business profile" />
       </ListGroup>
 
+      <ListGroup style={styles.group} title="Operations">
+        <ListRow icon="team" onPress={() => router.push('/team')} subtitle="Staff, roles and access" title="Team" />
+        <ListRow icon="queue" onPress={() => router.push('/queues')} subtitle="Walk-in lines and live calling" title="Queues" />
+        <ListRow icon="clock" onPress={() => router.push('/attendance')} subtitle="Who's on shift and hours worked" title="Attendance" />
+        <ListRow icon="truck" onPress={() => router.push('/deliveries')} subtitle="Request and track couriers" title="Deliveries" />
+      </ListGroup>
+
       <ListGroup style={styles.group} title="Money">
         <ListRow icon="invoice" onPress={() => router.navigate({ pathname: '/sales', params: { tab: 'invoices' } })} title="Invoices" />
+        <ListRow icon="receipt" onPress={() => router.push('/receipts')} subtitle="Paid storefront sales" title="Sales receipts" />
         <ListRow icon="payment" onPress={() => router.push('/billing')} subtitle="Your GigGuru plan payments" title="Billing history" />
       </ListGroup>
 

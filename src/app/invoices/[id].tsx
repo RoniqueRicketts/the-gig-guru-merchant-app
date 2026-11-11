@@ -9,14 +9,16 @@ import { Colors, Spacing, Type } from '@/constants/theme';
 import { useQuery } from '@/hooks/use-api';
 import { request, seg } from '@/lib/api';
 import { dateLabel, get, invoice, money, rows, str, type Row } from '@/lib/format';
+import { currentCatalog } from '@/lib/catalog';
 import { safeMessage } from '@/lib/security';
 
 /** Backend stores SendVia as Email | Telephone | Both; the resend route takes email | sms | both. */
 function resendChannel(value: unknown): SendVia {
-  const channel = str(value);
-  if (channel === 'Email') return 'email';
-  if (channel === 'Telephone') return 'sms';
-  return 'both';
+  const stored = str(value);
+  const channel = stored === 'Email' ? 'email' : stored === 'Telephone' ? 'sms' : 'both';
+  // Fall back to a channel the API's catalog lists if this one isn't accepted.
+  const accepted = currentCatalog()?.sendVia ?? [];
+  return accepted.includes(channel) ? channel : accepted.includes('both') ? 'both' : accepted[0] ?? channel;
 }
 
 export default function InvoiceDetailScreen() {

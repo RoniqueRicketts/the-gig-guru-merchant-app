@@ -54,6 +54,19 @@ const symbols = {
   offline: { ios: 'wifi.slash', android: 'wifi_off', web: 'wifi_off' },
   refresh: { ios: 'arrow.clockwise', android: 'refresh', web: 'refresh' },
   truck: { ios: 'shippingbox.and.arrow.backward', android: 'local_shipping', web: 'local_shipping' },
+  queue: { ios: 'person.3.sequence', android: 'groups', web: 'groups' },
+  ticket: { ios: 'ticket', android: 'confirmation_number', web: 'confirmation_number' },
+  megaphone: { ios: 'megaphone', android: 'campaign', web: 'campaign' },
+  recall: { ios: 'arrow.uturn.backward', android: 'undo', web: 'undo' },
+  skip: { ios: 'forward.end', android: 'skip_next', web: 'skip_next' },
+  'person.add': { ios: 'person.badge.plus', android: 'person_add', web: 'person_add' },
+  badge: { ios: 'person.text.rectangle', android: 'badge', web: 'badge' },
+  timer: { ios: 'timer', android: 'timer', web: 'timer' },
+  'clock.in': { ios: 'arrow.right.circle.fill', android: 'login', web: 'login' },
+  'clock.out': { ios: 'stop.circle.fill', android: 'logout', web: 'logout' },
+  receipt: { ios: 'doc.plaintext', android: 'receipt', web: 'receipt' },
+  walk: { ios: 'figure.walk', android: 'directions_walk', web: 'directions_walk' },
+  pause: { ios: 'pause.circle', android: 'pause_circle', web: 'pause_circle' },
 } satisfies Record<string, SymbolName>;
 
 export type IconName = keyof typeof symbols;

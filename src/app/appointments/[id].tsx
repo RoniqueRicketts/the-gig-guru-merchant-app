@@ -25,7 +25,9 @@ import type { AppointmentNextStatus } from '@/constants/enums';
 import { Colors, Spacing, Type } from '@/constants/theme';
 import { useQuery } from '@/hooks/use-api';
 import { request, seg } from '@/lib/api';
-import { appointment, dateLabel, dayKey, money, str, timeLabel, toDate, type Row } from '@/lib/format';
+import { appointment, dateLabel, dayKey, get, money, str, timeLabel, toDate, type Row } from '@/lib/format';
+import { allows } from '@/lib/catalog';
+import { coordsOf, openInMaps } from '@/lib/maps';
 import { isE164, safeMessage } from '@/lib/security';
 
 export default function AppointmentDetailScreen() {
@@ -94,7 +96,7 @@ export default function AppointmentDetailScreen() {
         <ListRow icon="clock" title={`${timeLabel(row.start)} – ${timeLabel(row.end)}`} value={`${minutes} min`} />
         {appointment.price(row) !== undefined ? <ListRow icon="payment" title="Price" value={money(appointment.price(row))} /> : null}
         {appointment.staff(row) ? <ListRow icon="person" title="With" value={appointment.staff(row)} /> : null}
-        {appointment.branch(row) ? <ListRow icon="location" title="Location" value={appointment.branch(row)} /> : null}
+        {appointment.branch(row) ? <BranchRow row={row} /> : null}
         {phone ? <ListRow icon="phone" title="Phone" value={phone} /> : null}
       </ListGroup>
 
@@ -108,19 +110,21 @@ export default function AppointmentDetailScreen() {
       {open ? (
         <ListGroup style={styles.actions} title="More actions">
           <ListRow icon="reschedule" onPress={() => setRescheduling(true)} title="Reschedule" />
-          {status !== 'In_Progress' ? (
+          {status !== 'In_Progress' && allows('appointmentNextStatuses', 'No_Show') ? (
             <ListRow
               icon="no.show"
               onPress={() => confirmAction('Mark as no-show?', `${customer} will be marked as a no-show.`, 'Mark no-show', () => void setStatus('No_Show', 'Marked no-show'))}
               title="Mark no-show"
             />
           ) : null}
-          <ListRow
-            destructive
-            icon="cancel"
-            onPress={() => confirmAction('Cancel this booking?', `${customer}'s booking will be canceled.`, 'Cancel booking', () => void setStatus('Canceled', 'Booking canceled'))}
-            title="Cancel booking"
-          />
+          {allows('appointmentNextStatuses', 'Canceled') ? (
+            <ListRow
+              destructive
+              icon="cancel"
+              onPress={() => confirmAction('Cancel this booking?', `${customer}'s booking will be canceled.`, 'Cancel booking', () => void setStatus('Canceled', 'Booking canceled'))}
+              title="Cancel booking"
+            />
+          ) : null}
         </ListGroup>
       ) : null}
 
@@ -214,3 +218,19 @@ const styles = StyleSheet.create({
   sheet: { flex: 1, backgroundColor: Colors.background },
   sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
 });
+
+/** The booking's location with the address and map pin the API returns on `branch.address`. */
+function BranchRow({ row }: { row: Row }) {
+  const address = get(row, 'branch', 'address');
+  const pin = coordsOf(address);
+  const line = [str(get(address, 'line1')), str(get(address, 'city'))].filter(Boolean).join(', ');
+  return (
+    <ListRow
+      icon="location"
+      onPress={pin ? () => void openInMaps(pin, appointment.branch(row)) : undefined}
+      subtitle={line || undefined}
+      title={appointment.branch(row)}
+      value={pin ? 'Map' : undefined}
+    />
+  );
+}

@@ -25,9 +25,30 @@ Expo Go on iOS — use a development build (`eas build --profile development`).
 - **Calendar** – month view with booking dots; tap a day, tap a booking.
 - **Create (+)** – one sheet for every "new" flow: booking, invoice, service, product.
 - **Sales** – orders and invoices with filters; one-tap order status steps, invoice reminders and cancellation.
-- **Account** – catalog, business hours, locations, addresses, business profile, billing history, login & security.
+- **Account** – catalog, business hours, locations, addresses, business profile, team, queues, attendance, deliveries, sales receipts, billing history, login & security.
 
-Booking times, durations, categories and hours are all chosen by tapping — no typing dates or enum values. Enum values mirror the backend Prisma schema in `src/constants/enums.ts`.
+Operations screens (reached from Account, Home quick actions and the Create sheet):
+
+- **Team** – staff list with search, add a team member (they get an emailed temporary password), edit details, location and roles; manage roles.
+- **Queues** – live walk-in board: one-tap *Call next* per counter, Recall / Done / No-show with the grace countdown, walk-in tickets, open/close. Refreshes every 20s while on screen.
+- **Attendance** – clock in/out card on Home; managers see each day's shifts and can end a forgotten shift. *Premium plan.*
+- **Deliveries** – request a courier for paid orders that ship (also from the order screen), track and call the courier, cancel before pickup.
+- **Sales receipts** – the receipts GigGuru issues automatically for paid storefront orders, shareable from the phone.
+- **Sign up** – new merchants register, confirm the emailed code and land signed in.
+
+Premium-only or permission-restricted features show a plain explanation instead of an error (HTTP 402 / 403).
+
+Booking times, durations, categories and hours are all chosen by tapping — no typing dates or enum values.
+
+## The API is the only data source
+
+The app never touches a database. Every read and write goes through the GigGuru API (`src/lib/api.ts`): auth, orders, bookings, map pins, everything.
+
+- **Option lists** (categories, countries, colors, statuses, which status changes are allowed) come from the API's public `GET /api/v1/meta` at launch and live in memory only (`src/lib/catalog.tsx`). The app ships with no copies; if the API can't be reached at launch it shows a retry screen.
+- **Map details** are the API's coordinates: location pins (`branch.address.latitude/longitude`), order pickup points and tracking events, courier positions. "Open in Maps" hands those coordinates to the phone's maps app. "Pin my current location" reads the phone's GPS once (foreground only, with permission) and sends it to `PUT /branches/{id}/location`; the app then shows what the API saved.
+- On-device storage holds only the API's sign-in tokens (Keychain / Keystore) and the app-lock preference.
+
+The backend must include `GET /api/v1/meta` (added in the-gig-guru-dashboard `server/api/meta`) before this app version is released. GPS pinning uses `expo-location`, so it needs a development or EAS build rather than Expo Go.
 
 ## Security
 

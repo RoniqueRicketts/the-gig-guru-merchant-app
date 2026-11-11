@@ -1,21 +1,10 @@
 /**
- * Enum values mirrored from the backend Prisma schema (the-gig-guru-dashboard/prisma/prod/schema.prisma).
- * The API validates these strictly — keep them in sync with the backend.
+ * Display helpers for API enum values. The values themselves are never hardcoded in the app:
+ * every option list comes from the API's GET /meta (see `src/lib/catalog.tsx`).
  */
 
-export const ServiceCategories = [
-  'Appliance_Repair', 'Barber', 'Cleaning', 'Consultation', 'Electrical', 'Event_Planning',
-  'Financial_Services', 'Fitness_And_Training', 'Hairdresser', 'HealthCare', 'Home_Cleaning',
-  'Home_Improvement', 'Installation', 'Landscaping', 'Legal_Services', 'Maintenance',
-  'Marketing_And_Advertising', 'Mechanic', 'Personal_Care', 'Pest_Control', 'Plumber',
-  'Photography_And_Videography', 'Roofing_Services', 'Repair', 'Services', 'Technology_Support',
-  'Transportation', 'Tutoring', 'Wellness', 'Writing_And_Editing',
-] as const;
-
-export const ServiceColors = ['Red', 'Blue', 'Green', 'Yellow', 'Purple', 'Orange', 'Pink'] as const;
-export type ServiceColor = (typeof ServiceColors)[number];
-
-export const ServiceColorHex: Record<ServiceColor, string> = {
+/** Calendar swatches for the API's service colors; any color the API adds later falls back to brand green. */
+const SERVICE_COLOR_HEX: Record<string, string> = {
   Red: '#E5484D',
   Blue: '#3B82F6',
   Green: '#257F24',
@@ -25,33 +14,25 @@ export const ServiceColorHex: Record<ServiceColor, string> = {
   Pink: '#EC4899',
 };
 
-export const ProductCategories = [
-  'Groceries', 'Fast_Food', 'Automotive', 'Clothing_Accessories', 'Electronics', 'Furniture',
-  'Health_And_Beauty', 'Home', 'Jewelry', 'Office_Supplies', 'Pets', 'Party_Occasions',
-  'Patio_And_Garden', 'Sports_Outdoors', 'Toys_And_Games', 'Manufacturer',
-] as const;
+export function serviceColorHex(value: unknown): string {
+  return (typeof value === 'string' && SERVICE_COLOR_HEX[value]) || '#257F24';
+}
 
-export const Countries = [
-  'Antigua_and_Barbuda', 'Bahamas', 'Canada', 'Jamaica', 'St_Lucia', 'Trinidad_and_Tobago', 'United_States',
-] as const;
+/** Country names are proper nouns: "United_States" → "United States", "St_Lucia" → "St. Lucia". */
+export function countryLabel(value: string | null | undefined): string {
+  if (!value) return '';
+  return value
+    .split('_')
+    .map((word) => (word === 'and' ? '&' : word === 'St' ? 'St.' : word))
+    .join(' ');
+}
 
-export const AddressLocations = ['Home', 'Work', 'School'] as const;
+/** Request field types. The allowed values are whatever the API's catalog lists at runtime. */
+export type AppointmentNextStatus = string;
+export type SettableOrderStatus = string;
+export type SendVia = string;
 
-/** Statuses the merchant may move an appointment to (PATCH /appointments/{id}/status). */
-export type AppointmentNextStatus = 'In_Progress' | 'Completed' | 'No_Show' | 'Canceled' | 'Rescheduled';
-
-/** Statuses the merchant may set on an order (PATCH /orders/{id}/status). */
-export const SettableOrderStatuses = ['Pending', 'Processing', 'Awaiting_Shipment'] as const;
-export type SettableOrderStatus = (typeof SettableOrderStatuses)[number];
-
-export const OrderStatuses = [
-  'Awaiting_Payment', 'Pending', 'Processing', 'Awaiting_Shipment', 'Picked_Up', 'Shipped',
-  'Completed', 'Canceled', 'Delivered', 'Returned',
-] as const;
-
-export const SendViaOptions = ['both', 'email', 'sms'] as const;
-export type SendVia = (typeof SendViaOptions)[number];
-
+/** Quick-pick lengths for a service. Duration is free text on the API, so these are only UI shortcuts. */
 export const DurationPresets = [
   { label: '15 min', value: '15' },
   { label: '30 min', value: '30' },

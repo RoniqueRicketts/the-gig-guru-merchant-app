@@ -122,6 +122,13 @@ export default function SignInScreen() {
             </Pressable>
           )}
 
+          {!challenge ? (
+            <View style={styles.signUp}>
+              <Text style={styles.signUpText}>New to GigGuru?</Text>
+              <Button label="Create a business account" onPress={() => router.push('/sign-up')} size="md" variant="secondary" />
+            </View>
+          ) : null}
+
           <Text style={styles.note}>Protected with encrypted sign-in. We never store your password on this device.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -141,5 +148,7 @@ const styles = StyleSheet.create({
   secondary: { marginTop: Spacing.sm },
   forgot: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.md, marginTop: Spacing.sm },
   forgotText: { color: Colors.primary, fontSize: 15, fontWeight: '600' },
+  signUp: { marginTop: Spacing.xl, paddingTop: Spacing.xl, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.border, gap: Spacing.sm },
+  signUpText: { color: Colors.textMuted, fontSize: 14, textAlign: 'center' },
   note: { color: Colors.textFaint, fontSize: 12, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 17 },
 });

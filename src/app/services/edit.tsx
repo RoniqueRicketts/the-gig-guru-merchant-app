@@ -3,7 +3,8 @@ import { useState } from 'react';
 
 import { FormScreen } from '@/components/form-screen';
 import { ChoiceChips, Field, MultiChoiceChips, Select, useToast } from '@/components/ui';
-import { DurationPresets, enumLabel, ServiceCategories, ServiceColorHex, ServiceColors } from '@/constants/enums';
+import { DurationPresets, enumLabel, serviceColorHex } from '@/constants/enums';
+import { useCatalog } from '@/lib/catalog';
 import { useQuery } from '@/hooks/use-api';
 import { request, seg } from '@/lib/api';
 import { rows, str, type Row } from '@/lib/format';
@@ -29,10 +30,11 @@ export default function ServiceEditScreen() {
 
 function ServiceForm({ id, initial, branches }: { id?: string; initial: Row | null; branches: Row[] }) {
   const toast = useToast();
+  const { serviceCategories, serviceColors } = useCatalog();
   const existingBranches = rows(initial?.branchServices);
   const [name, setName] = useState(str(initial?.name));
   const [category, setCategory] = useState<string | null>(str(initial?.category) || null);
-  const [color, setColor] = useState<string>(str(initial?.color) || 'Green');
+  const [color, setColor] = useState<string>(str(initial?.color) || (serviceColors.includes('Green') ? 'Green' : serviceColors[0]));
   const [duration, setDuration] = useState(str(initial?.duration) || '60');
   const [price, setPrice] = useState(existingBranches[0]?.salePrice != null ? String(existingBranches[0].salePrice) : '');
   const [description, setDescription] = useState(str(initial?.description));
@@ -61,12 +63,15 @@ function ServiceForm({ id, initial, branches }: { id?: string; initial: Row | nu
     const tasks = rows(initial?.tasks)
       .map((task) => ({ id: str(task.id), label: str(task.label) || str(task.name), completed: task.completed === true }))
       .filter((task) => task.id && task.label);
+    // `images` defaults to [] server-side, so omitting it would delete the service's photos.
+    const images = (Array.isArray(initial?.images) ? initial.images : []).map(str).filter(Boolean).slice(0, 8);
     const base = {
       name: name.trim(),
       category,
       color,
       duration,
       tasks,
+      images,
       ...(description.trim() ? { description: description.trim() } : {}),
     };
     try {
@@ -128,7 +133,7 @@ function ServiceForm({ id, initial, branches }: { id?: string; initial: Row | nu
         error={errors.category}
         label="Category"
         onChange={setCategory}
-        options={ServiceCategories.map((value) => ({ value, label: enumLabel(value) }))}
+        options={serviceCategories.map((value) => ({ value, label: enumLabel(value) }))}
         value={category}
       />
       {branches.length > 1 || errors.branches ? (
@@ -143,7 +148,7 @@ function ServiceForm({ id, initial, branches }: { id?: string; initial: Row | nu
       <ChoiceChips
         label="Calendar color"
         onChange={setColor}
-        options={ServiceColors.map((value) => ({ value, label: value, color: ServiceColorHex[value] }))}
+        options={serviceColors.map((value) => ({ value, label: enumLabel(value), color: serviceColorHex(value) }))}
         value={color}
       />
       <Field label="Description" maxLength={2000} multiline onChangeText={setDescription} placeholder="Optional · what's included" value={description} />

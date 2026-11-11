@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { AddressFields, addressBody, addressFrom, validateAddress } from '@/components/address-fields';
 import { FormScreen } from '@/components/form-screen';
 import { ChoiceChips, Field, SwitchRow, useToast } from '@/components/ui';
-import { AddressLocations } from '@/constants/enums';
+import { enumLabel } from '@/constants/enums';
+import { useCatalog } from '@/lib/catalog';
 import { useQuery } from '@/hooks/use-api';
 import { request, seg } from '@/lib/api';
 import { str, type Row } from '@/lib/format';
@@ -31,7 +32,8 @@ function AddressForm({ id, initial, title }: { id?: string; initial: Row | null;
   const [name, setName] = useState(str(initial?.name));
   const [email, setEmail] = useState(str(initial?.email));
   const [phone, setPhone] = useState(str(initial?.telephone));
-  const [location, setLocation] = useState<string>(str(initial?.location) || 'Work');
+  const { addressLocations } = useCatalog();
+  const [location, setLocation] = useState<string>(str(initial?.location) || (addressLocations.includes('Work') ? 'Work' : addressLocations[0]));
   const [isDefault, setIsDefault] = useState(initial?.isDefault === true);
   const [address, setAddress] = useState(() => addressFrom(initial));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -90,7 +92,7 @@ function AddressForm({ id, initial, title }: { id?: string; initial: Row | null;
       saving={saving}
       title={title}>
       <Field error={errors.name} label="Label" onChangeText={setName} placeholder="e.g. Main office" value={name} />
-      <ChoiceChips label="Type" onChange={setLocation} options={AddressLocations.map((value) => ({ value, label: value }))} value={location} />
+      <ChoiceChips label="Type" onChange={setLocation} options={addressLocations.map((value) => ({ value, label: enumLabel(value) }))} value={location} />
       <AddressFields errors={errors} onChange={setAddress} values={address} />
       <Field autoCapitalize="none" error={errors.email} keyboardType="email-address" label="Email" maxLength={254} onChangeText={setEmail} placeholder="Optional" value={email} />
       <Field autoComplete="tel" error={errors.phone} keyboardType="phone-pad" label="Phone" maxLength={20} onChangeText={setPhone} placeholder="Optional · +1 876 555 0123" value={phone} />

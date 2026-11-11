@@ -2,39 +2,61 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LockScreen, PrivacyCover } from '@/components/lock-screen';
-import { ToastProvider } from '@/components/ui';
+import { ErrorState, ToastProvider } from '@/components/ui';
 import { Colors } from '@/constants/theme';
 import { AppLockProvider, useAppLock } from '@/lib/app-lock';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { CatalogProvider, useCatalogState } from '@/lib/catalog';
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <AppLockProvider>
-        <ToastProvider>
-          <StatusBar style="dark" />
-          <RootNavigator />
-        </ToastProvider>
-      </AppLockProvider>
-    </AuthProvider>
+    <CatalogProvider>
+      <AuthProvider>
+        <AppLockProvider>
+          <ToastProvider>
+            <StatusBar style="dark" />
+            <RootNavigator />
+          </ToastProvider>
+        </AppLockProvider>
+      </AuthProvider>
+    </CatalogProvider>
   );
 }
 
 function RootNavigator() {
   const { session, loading } = useAuth();
   const { locked, obscured } = useAppLock();
+  // Option lists (categories, countries, statuses…) come from the API's GET /meta.
+  const meta = useCatalogState();
   const signedIn = !!session;
+  const settled = !loading && !meta.loading;
 
   useEffect(() => {
-    if (!loading) void SplashScreen.hideAsync();
-  }, [loading]);
+    if (settled) void SplashScreen.hideAsync();
+  }, [settled]);
 
-  // Keep the native splash up until we know whether a secure session exists.
+  // Keep the native splash up until the session and the API's catalog are both known.
+  if (!meta.catalog) {
+    if (meta.loading) {
+      // Under the splash on launch; visible only while retrying after a failure.
+      return (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background }}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+      );
+    }
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', backgroundColor: Colors.background }}>
+        <ErrorState message={meta.error ?? "We couldn't reach GigGuru."} onRetry={meta.retry} />
+      </SafeAreaView>
+    );
+  }
   if (loading) return null;
   if (locked) return <LockScreen />;
 
@@ -52,6 +74,7 @@ function RootNavigator() {
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="sign-in" options={{ headerShown: false }} />
           <Stack.Screen name="reset-password" options={{ title: 'Reset password', presentation: 'modal' }} />
+          <Stack.Screen name="sign-up" options={{ title: 'Create account', presentation: 'modal' }} />
         </Stack.Protected>
 
         <Stack.Protected guard={signedIn}>
@@ -82,6 +105,16 @@ function RootNavigator() {
           <Stack.Screen name="hours" options={{ title: 'Business hours' }} />
           <Stack.Screen name="company" options={{ title: 'Business profile' }} />
           <Stack.Screen name="security" options={{ title: 'Login & security' }} />
+          <Stack.Screen name="team/index" options={{ title: 'Team' }} />
+          <Stack.Screen name="team/edit" options={{ title: 'Team member', presentation: 'modal' }} />
+          <Stack.Screen name="team/role" options={{ title: 'Role', presentation: 'modal' }} />
+          <Stack.Screen name="queues/index" options={{ title: 'Queues' }} />
+          <Stack.Screen name="queues/[id]" options={{ title: 'Queue' }} />
+          <Stack.Screen name="queues/edit" options={{ title: 'Queue', presentation: 'modal' }} />
+          <Stack.Screen name="attendance" options={{ title: 'Attendance' }} />
+          <Stack.Screen name="deliveries" options={{ title: 'Deliveries' }} />
+          <Stack.Screen name="receipts/index" options={{ title: 'Sales receipts' }} />
+          <Stack.Screen name="receipts/[id]" options={{ title: 'Receipt' }} />
         </Stack.Protected>
       </Stack>
       {obscured && signedIn ? <PrivacyCover /> : null}

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { SimpleListScreen } from '@/components/simple-list-screen';
 import { ListRow, StatusBadge, useToast } from '@/components/ui';
-import { enumLabel } from '@/constants/enums';
+import { countryLabel } from '@/constants/enums';
 import { Colors } from '@/constants/theme';
 import { request, seg } from '@/lib/api';
 import { str } from '@/lib/format';
@@ -27,7 +27,7 @@ export default function AddressesScreen() {
             icon="location"
             key={id}
             onPress={() => router.push({ pathname: '/addresses/edit', params: { id } })}
-            subtitle={[str(row.line1), str(row.city), enumLabel(str(row.country))].filter(Boolean).join(', ')}
+            subtitle={[str(row.line1), str(row.city), countryLabel(str(row.country))].filter(Boolean).join(', ')}
             title={str(row.name) || 'Address'}
             trailing={
               isDefault ? (

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { EmptyState, ErrorState, Icon, IconButton, LoadingFooter, Segmented, SkeletonList } from '@/components/ui';
-import { enumLabel, ServiceColorHex, type ServiceColor } from '@/constants/enums';
+import { enumLabel, serviceColorHex } from '@/constants/enums';
 import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { usePagedList } from '@/hooks/use-api';
 import { qs } from '@/lib/api';
@@ -96,7 +96,7 @@ export default function CatalogScreen() {
 function CatalogRow({ kind, row }: { kind: Kind; row: Row }) {
   const id = str(row.id);
   const image = Array.isArray(row.images) ? str(row.images[0]) : '';
-  const color = ServiceColorHex[str(row.color) as ServiceColor] ?? Colors.primary;
+  const color = serviceColorHex(row.color);
   const detail =
     kind === 'services'
       ? [enumLabel(str(row.category)), str(row.duration) ? `${parseInt(str(row.duration), 10) || str(row.duration)} min` : ''].filter(Boolean).join(' · ')

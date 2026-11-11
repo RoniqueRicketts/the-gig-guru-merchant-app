@@ -3,12 +3,15 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Banner, Button, ChoiceChips, Field, IconButton, Screen, Select, Stepper, useToast } from '@/components/ui';
-import type { SendVia } from '@/constants/enums';
+import { enumLabel, type SendVia } from '@/constants/enums';
+import { useCatalog } from '@/lib/catalog';
 import { Colors, Radius, Spacing, Type } from '@/constants/theme';
 import { useQuery } from '@/hooks/use-api';
 import { request } from '@/lib/api';
 import { dayKey, money, rows, startingPrice, str, type Row } from '@/lib/format';
 import { isE164, isEmail, normalizePhone, safeMessage } from '@/lib/security';
+
+const sendViaLabels: Record<string, string> = { email: 'Email', sms: 'Text', both: 'Both' };
 
 type Line = { key: string; id: string; category: 'Service' | 'Product'; name: string; price: number; quantity: number };
 
@@ -27,6 +30,7 @@ function addDays(days: number): string {
 
 export default function NewInvoiceScreen() {
   const toast = useToast();
+  const { sendVia: sendViaOptions, itemCategories } = useCatalog();
   const services = useQuery<Row[]>('/services?limit=100');
   const products = useQuery<Row[]>('/products?limit=100');
 
@@ -35,7 +39,7 @@ export default function NewInvoiceScreen() {
   const [phone, setPhone] = useState('');
   const [lines, setLines] = useState<Line[]>([]);
   const [due, setDue] = useState('7');
-  const [sendVia, setSendVia] = useState<SendVia>('email');
+  const [sendVia, setSendVia] = useState<SendVia>(sendViaOptions.includes('email') ? 'email' : sendViaOptions[0]);
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -49,10 +53,13 @@ export default function NewInvoiceScreen() {
       row,
       category,
     });
-    return [...rows(services.data).map((row) => toOption(row, 'Service')), ...rows(products.data).map((row) => toOption(row, 'Product'))].filter(
+    // Only offer line kinds the API's ItemCategory accepts.
+    const serviceRows = itemCategories.includes('Service') ? rows(services.data) : [];
+    const productRows = itemCategories.includes('Product') ? rows(products.data) : [];
+    return [...serviceRows.map((row) => toOption(row, 'Service')), ...productRows.map((row) => toOption(row, 'Product'))].filter(
       (option) => Number.isFinite(Number(startingPrice(option.row)))
     );
-  }, [services.data, products.data]);
+  }, [services.data, products.data, itemCategories]);
 
   const subtotal = lines.reduce((sum, line) => sum + line.price * line.quantity, 0);
 
@@ -158,11 +165,7 @@ export default function NewInvoiceScreen() {
       <ChoiceChips<SendVia>
         label="Send by"
         onChange={setSendVia}
-        options={[
-          { value: 'email', label: 'Email' },
-          { value: 'sms', label: 'Text' },
-          { value: 'both', label: 'Both' },
-        ]}
+        options={sendViaOptions.map((value) => ({ value, label: sendViaLabels[value] ?? enumLabel(value) }))}
         value={sendVia}
       />
       <Field label="Note to customer" maxLength={2000} multiline onChangeText={setNotes} placeholder="Optional" value={notes} />

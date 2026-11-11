@@ -139,3 +139,43 @@ export function startingPrice(row: Row): unknown {
   const prices = branchRows.map((entry) => Number(entry.salePrice)).filter((price) => Number.isFinite(price));
   return prices.length ? Math.min(...prices) : undefined;
 }
+
+/** 5400 → "1h 30m", 45 → "45s", 600 → "10m". */
+export function durationLabel(totalSeconds: unknown): string {
+  const seconds = Math.max(0, Math.round(Number(totalSeconds)));
+  if (!Number.isFinite(seconds)) return '—';
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+/** Live "H:MM:SS" elapsed since a timestamp, for running clocks. */
+export function elapsedClock(since: unknown, now = Date.now()): string {
+  const start = toDate(since)?.getTime();
+  if (!start) return '—';
+  const total = Math.max(0, Math.floor((now - start) / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+/** Device IANA time zone (e.g. "America/Jamaica"), used for day boundaries on the server. */
+export function deviceTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+}
+
+export const employee = {
+  name: (row: Row) => str(row.fullname) || str(row.email) || 'Team member',
+  roles: (row: Row) =>
+    rows(row.userRoles)
+      .map((entry) => ({ id: str(get(entry, 'role', 'id')) || str(entry.roleId), name: str(get(entry, 'role', 'name')) }))
+      .filter((role) => role.id),
+};

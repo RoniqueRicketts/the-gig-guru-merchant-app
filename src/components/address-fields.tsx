@@ -1,5 +1,6 @@
 import { Field, Select } from '@/components/ui';
-import { Countries, enumLabel } from '@/constants/enums';
+import { countryLabel } from '@/constants/enums';
+import { useCatalog } from '@/lib/catalog';
 
 export type AddressValues = { line1: string; line2: string; city: string; state: string; zipcode: string; country: string | null };
 
@@ -37,6 +38,7 @@ export function AddressFields({
   onChange: (values: AddressValues) => void;
   errors: Record<string, string>;
 }) {
+  const { countries } = useCatalog();
   const set = (key: keyof AddressValues) => (value: string) => onChange({ ...values, [key]: value });
   return (
     <>
@@ -45,7 +47,7 @@ export function AddressFields({
       <Field error={errors.city} label="City / town" onChangeText={set('city')} textContentType="addressCity" value={values.city} />
       <Field error={errors.state} label="Parish / state" onChangeText={set('state')} textContentType="addressState" value={values.state} />
       <Field autoCapitalize="characters" label="Postal code" maxLength={12} onChangeText={set('zipcode')} placeholder="Optional" textContentType="postalCode" value={values.zipcode} />
-      <Select error={errors.country} label="Country" onChange={set('country')} options={Countries.map((value) => ({ value, label: enumLabel(value) }))} value={values.country} />
+      <Select error={errors.country} label="Country" onChange={set('country')} options={countries.map((value) => ({ value, label: countryLabel(value) }))} value={values.country} />
     </>
   );
 }

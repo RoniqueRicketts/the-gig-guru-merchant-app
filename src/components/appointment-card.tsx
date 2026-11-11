@@ -7,15 +7,18 @@ import type { AppointmentNextStatus } from '@/constants/enums';
 import { Colors, Spacing } from '@/constants/theme';
 import { request, seg } from '@/lib/api';
 import { appointment, relativeDay, str, timeLabel, type Row } from '@/lib/format';
+import { allows } from '@/lib/catalog';
 import { safeMessage } from '@/lib/security';
 
 type NextAction = { status: AppointmentNextStatus; label: string; done: string; confirm?: string };
 
 /** The single most likely next step for a booking — this is what the big button does. */
 export function primaryActionFor(status: string): NextAction | null {
-  if (status === 'Scheduled' || status === 'Rescheduled') return { status: 'In_Progress', label: 'Start', done: 'Booking started' };
-  if (status === 'In_Progress') return { status: 'Completed', label: 'Complete', done: 'Marked complete' };
-  return null;
+  let action: NextAction | null = null;
+  if (status === 'Scheduled' || status === 'Rescheduled') action = { status: 'In_Progress', label: 'Start', done: 'Booking started' };
+  if (status === 'In_Progress') action = { status: 'Completed', label: 'Complete', done: 'Marked complete' };
+  // Offer the step only if the API's PATCH /appointments/{id}/status accepts it (GET /meta).
+  return action && allows('appointmentNextStatuses', action.status) ? action : null;
 }
 
 export function isOpenStatus(status: string): boolean {
