@@ -48,6 +48,7 @@ export default function TabStack({ segment }: { segment: TabGroup }) {
       <Stack.Screen name="hours" options={{ title: 'Business hours' }} />
       <Stack.Screen name="company" options={{ title: 'Business profile' }} />
       <Stack.Screen name="security" options={{ title: 'Login & security' }} />
+      <Stack.Screen name="delete-account" options={{ title: 'Delete account' }} />
       <Stack.Screen name="team/index" options={{ ...plainListOptions, title: 'Team' }} />
       <Stack.Screen name="team/edit" options={{ title: 'Team member', presentation: 'modal' }} />
       <Stack.Screen name="team/role" options={{ title: 'Role', presentation: 'modal' }} />

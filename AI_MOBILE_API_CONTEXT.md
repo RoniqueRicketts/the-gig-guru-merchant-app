@@ -166,6 +166,8 @@ These exist in the backend and are used by the app, but were not in the original
 
 | Method and path | Query/body | Success |
 | --- | --- | --- |
+| `GET /account/deletion` | None | `{ data: { closesBusiness, businessName, teamMembers, blockers[] } }`; what deleting would do. `blockers` (open orders, delivery jobs in progress) must be empty before deleting |
+| `DELETE /account` | `{ confirmation: "DELETE" }` | `{ data: { closedBusiness, deletedAccounts } }`; permanent. Scrubs the person's details and deletes their sign-in; for the owner it also cancels the plan, anonymises and closes the business and deletes the team's accounts. `409` with the blockers as `message` while work is in flight. Afterwards every token returns `401`, so clear the local session (no `/auth/sign-out`) |
 | `GET /meta` (public) | None | `{ data: { serviceCategories, serviceColors, productCategories, countries, addressLocations, businessTypes, orderStatuses, settableOrderStatuses, deliverableOrderStatuses, appointmentStatuses, appointmentNextStatuses, invoiceStatuses, itemCategories, sendVia } }`, derived from the API's own enums and schemas |
 | `PUT /branches/{id}/location` | `{ latitude, longitude }` | `{ data: branch }`; the branch needs an address first; pins it on the nearby map |
 | `GET /queues` | None | `{ data: Queue[] }` each with `branch { id, name }` and `waiting` |

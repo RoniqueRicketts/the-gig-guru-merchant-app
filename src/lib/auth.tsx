@@ -14,6 +14,8 @@ type AuthContextValue = {
   completeChallenge: (password: string) => Promise<void>;
   cancelChallenge: () => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  /** Permanently deletes the account (and the business, for its owner), then signs out locally. */
+  deleteAccount: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -130,6 +132,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           bearerToken: session.accessToken,
           body: { current_password: currentPassword, new_password: newPassword },
         });
+      },
+
+      async deleteAccount() {
+        await request('/account', { method: 'DELETE', body: { confirmation: 'DELETE' } });
+        // The server already removed the sign-in, so there's nothing to revoke; just forget the tokens.
+        await clearSession();
+        setSession(null);
       },
 
       async signOut() {

@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, StyleSheet, Text } from 'react-native';
 
@@ -73,6 +74,16 @@ export default function SecurityScreen() {
           icon="shield"
           subtitle="Tokens are kept in the device's secure keychain, never in plain storage, and are revoked when you sign out."
           title="Encrypted on this device"
+        />
+      </ListGroup>
+
+      <ListGroup style={styles.group} title="Delete account">
+        <ListRow
+          destructive
+          icon="trash"
+          onPress={() => router.push('/delete-account')}
+          subtitle="Permanently remove your account. Owners also close their business."
+          title="Delete account"
         />
       </ListGroup>
     </Screen>
