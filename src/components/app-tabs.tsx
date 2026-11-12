@@ -20,17 +20,17 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Icon md="home" sf={{ default: 'house', selected: 'house.fill' }} />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="calendar">
+      <NativeTabs.Trigger name="(calendar)">
         <NativeTabs.Trigger.Label>Calendar</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon md="calendar_month" sf="calendar" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="sales">
+      <NativeTabs.Trigger name="(sales)">
         <NativeTabs.Trigger.Label>Sales</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon md="bar_chart" sf={{ default: 'chart.bar', selected: 'chart.bar.fill' }} />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="account">
+      <NativeTabs.Trigger name="(account)">
         <NativeTabs.Trigger.Label>Account</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           md="account_circle"

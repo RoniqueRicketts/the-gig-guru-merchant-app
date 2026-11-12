@@ -6,7 +6,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LockScreen, PrivacyCover } from '@/components/lock-screen';
-import { plainListOptions, stackScreenOptions } from '@/components/navigation';
+import { stackScreenOptions } from '@/components/navigation';
 import { ErrorState, ToastProvider } from '@/components/ui';
 import { Colors, NavigationTheme } from '@/constants/theme';
 import { AppLockProvider, useAppLock } from '@/lib/app-lock';
@@ -76,43 +76,8 @@ function RootNavigator() {
         </Stack.Protected>
 
         <Stack.Protected guard={signedIn}>
+          {/* Every signed-in screen lives inside a tab's stack (see (tabs)/(home,calendar,sales,account)/_layout.tsx) so the tab bar is always visible. */}
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="create"
-            options={{
-              presentation: 'formSheet',
-              sheetAllowedDetents: 'fitToContents',
-              sheetGrabberVisible: true,
-              headerShown: false,
-              contentStyle: { backgroundColor: Colors.card },
-            }}
-          />
-          <Stack.Screen name="appointments/new" options={{ title: 'New booking', presentation: 'modal' }} />
-          <Stack.Screen name="appointments/[id]" options={{ title: 'Booking' }} />
-          <Stack.Screen name="invoices/new" options={{ title: 'New invoice', presentation: 'modal' }} />
-          <Stack.Screen name="invoices/[id]" options={{ title: 'Invoice' }} />
-          <Stack.Screen name="orders/[id]" options={{ title: 'Order' }} />
-          <Stack.Screen name="billing" options={{ title: 'Billing history' }} />
-          <Stack.Screen name="catalog" options={{ ...plainListOptions, title: 'Catalog' }} />
-          <Stack.Screen name="services/edit" options={{ title: 'Service', presentation: 'modal' }} />
-          <Stack.Screen name="products/edit" options={{ title: 'Product', presentation: 'modal' }} />
-          <Stack.Screen name="branches/index" options={{ title: 'Locations' }} />
-          <Stack.Screen name="branches/edit" options={{ title: 'Location', presentation: 'modal' }} />
-          <Stack.Screen name="addresses/index" options={{ title: 'Addresses' }} />
-          <Stack.Screen name="addresses/edit" options={{ title: 'Address', presentation: 'modal' }} />
-          <Stack.Screen name="hours" options={{ title: 'Business hours' }} />
-          <Stack.Screen name="company" options={{ title: 'Business profile' }} />
-          <Stack.Screen name="security" options={{ title: 'Login & security' }} />
-          <Stack.Screen name="team/index" options={{ ...plainListOptions, title: 'Team' }} />
-          <Stack.Screen name="team/edit" options={{ title: 'Team member', presentation: 'modal' }} />
-          <Stack.Screen name="team/role" options={{ title: 'Role', presentation: 'modal' }} />
-          <Stack.Screen name="queues/index" options={{ title: 'Queues' }} />
-          <Stack.Screen name="queues/[id]" options={{ title: 'Queue' }} />
-          <Stack.Screen name="queues/edit" options={{ title: 'Queue', presentation: 'modal' }} />
-          <Stack.Screen name="attendance" options={{ title: 'Attendance' }} />
-          <Stack.Screen name="deliveries" options={{ title: 'Deliveries' }} />
-          <Stack.Screen name="receipts/index" options={{ ...plainListOptions, title: 'Sales receipts' }} />
-          <Stack.Screen name="receipts/[id]" options={{ title: 'Receipt' }} />
         </Stack.Protected>
       </Stack>
       {obscured && signedIn ? <PrivacyCover /> : null}
