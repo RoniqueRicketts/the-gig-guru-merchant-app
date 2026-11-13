@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "GigGuru Merchant",
-    "slug": "the-gig-guru-merchant-app",
+    "slug": "the-gigguru-merchant",
     "description": "Simple tools for GigGuru merchants.",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -28,7 +28,13 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.ACCESS_BACKGROUND_LOCATION"
       ],
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -61,6 +67,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "48bcc74a-7e06-40a2-80c8-c0fbd96a3046"
+      }
+    },
+    "owner": "rickettstechltd"
   }
 }
